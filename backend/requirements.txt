@@ -1,0 +1,20 @@
+# Flask Framework
+Flask
+Flask-CORS
+Flask-JWT-Extended
+
+# Security
+Werkzeug
+
+# Google Cloud & Firebase
+google-cloud-firestore
+firebase-admin
+google-genai
+
+# Utilities
+python-dotenv
+gunicorn
+
+# Development & Testing (optional)
+pytest
+pytest-flask
