@@ -84,7 +84,7 @@ const Login = ({ onSwitchToRegister, onLoginSuccess }) => {
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-700"
               >
-                Username
+                Username or Email
               </label>
               <input
                 id="username"
@@ -93,8 +93,8 @@ const Login = ({ onSwitchToRegister, onLoginSuccess }) => {
                 required
                 value={formData.username}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                placeholder="Enter your username"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-black"
+                placeholder="Enter your username or email"
               />
             </div>
 
@@ -112,7 +112,7 @@ const Login = ({ onSwitchToRegister, onLoginSuccess }) => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-black"
                 placeholder="Enter your password"
               />
             </div>
