@@ -197,8 +197,9 @@ def submit_daily_data():
         if not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required fields'}), 400
         
-        # Parse date
-        entry_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        # Parse date and convert to datetime for Firestore compatibility
+        entry_date = datetime.strptime(data['date'], '%Y-%m-%d')
+        entry_date_only = entry_date.date()  # Keep date object for comparison
         
         # Check if entry already exists for this date using modern filter syntax
         existing_entry = db.collection('daily_entries').where(
@@ -210,10 +211,10 @@ def submit_daily_data():
         if existing_entry:
             return jsonify({'error': 'Entry already exists for this date'}), 409
         
-        # Create daily entry
+        # Create daily entry - use datetime object for Firestore
         entry_data = {
             'user_id': user_id,
-            'date': entry_date,
+            'date': entry_date,  # Store as datetime object
             'height': float(data['height']),
             'weight': float(data['weight']),
             'breakfast': data['breakfast'],
@@ -253,7 +254,12 @@ def get_daily_data():
         for entry in entries:
             entry_dict = entry.to_dict()
             entry_dict['id'] = entry.id
-            entry_dict['date'] = entry_dict['date'].isoformat() if entry_dict.get('date') else None
+            # Convert datetime back to date string for frontend
+            if entry_dict.get('date'):
+                if hasattr(entry_dict['date'], 'date'):
+                    entry_dict['date'] = entry_dict['date'].date().isoformat()
+                else:
+                    entry_dict['date'] = entry_dict['date'].isoformat() if hasattr(entry_dict['date'], 'isoformat') else str(entry_dict['date'])
             entries_data.append(entry_dict)
         
         return jsonify({

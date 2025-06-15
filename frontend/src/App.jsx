@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import UserProfile from "./components/UserProfile";
+import HistoryView from "./components/HistoryView";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("login");
@@ -22,6 +23,14 @@ function App() {
           <UserProfile
             onLogout={() => setCurrentPage("login")}
             onBack={() => setCurrentPage("login")}
+            onViewHistory={() => setCurrentPage("history")}
+          />
+        );
+      case "history":
+        return (
+          <HistoryView
+            onBack={() => setCurrentPage("profile")}
+            onLogout={() => setCurrentPage("login")}
           />
         );
       default:
