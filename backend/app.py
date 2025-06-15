@@ -9,19 +9,23 @@ from google import genai
 import os
 import numpy as np
 import logging
+from config import Config
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
+app.config.from_object(Config)
 
 # Initialize extensions
-CORS(app, origins=['http://localhost:5173', 'http://localhost:3000', 'https://your-firebase-app.web.app'])
+CORS(app, 
+     origins=Config.CORS_ORIGINS,
+     methods=Config.CORS_METHODS,
+     allow_headers=Config.CORS_ALLOW_HEADERS,
+     supports_credentials=Config.CORS_SUPPORTS_CREDENTIALS)
 jwt = JWTManager(app)
 
 # Initialize Firebase Admin SDK
 try:
-    cred = credentials.Certificate('hello.json')
+    cred = credentials.Certificate(Config.FIREBASE_CREDENTIALS_PATH)
     firebase_admin.initialize_app(cred)
 except Exception as e:
     print(f"Firebase initialization error: {e}")
@@ -34,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 # Initialize Gemini AI
-api_key = os.environ.get('GEMINI_API_KEY')
+api_key = Config.GEMINI_API_KEY
 if api_key:
     genai_client = genai.Client(api_key=api_key)
 else:
@@ -56,6 +60,14 @@ def register():
         required_fields = ['email', 'username', 'password']
         if not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Validate email contains @
+        if '@' not in data['email']:
+            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Validate username doesn't contain @
+        if '@' in data['username']:
+            return jsonify({'error': 'Username cannot contain @ symbol'}), 400
         
         # Check if user already exists using modern filter syntax
         users_ref = db.collection('users')
@@ -93,16 +105,28 @@ def register():
 
 @app.route('/login', methods=['POST'])
 def login():
-    """User login endpoint"""
+    """User login endpoint - supports both username and email"""
     try:
         data = request.get_json()
         
-        if not data.get('username') or not data.get('password'):
-            return jsonify({'error': 'Username and password required'}), 400
+        # Accept either 'username' or 'login' field for backward compatibility
+        login_identifier = data.get('username') or data.get('login')
+        password = data.get('password')
         
-        # Find user by username using modern filter syntax
+        if not login_identifier or not password:
+            return jsonify({'error': 'Username/email and password required'}), 400
+        
+        # Find user by username or email using modern filter syntax
         users_ref = db.collection('users')
-        user_docs = users_ref.where(filter=firestore.FieldFilter('username', '==', data['username'])).get()
+        user_docs = None
+        
+        # Check if login identifier contains @ (likely email)
+        if '@' in login_identifier:
+            # Search by email
+            user_docs = users_ref.where(filter=firestore.FieldFilter('email', '==', login_identifier)).get()
+        else:
+            # Search by username
+            user_docs = users_ref.where(filter=firestore.FieldFilter('username', '==', login_identifier)).get()
         
         if not user_docs:
             return jsonify({'error': 'Invalid credentials'}), 401
@@ -111,7 +135,7 @@ def login():
         user_data = user_doc.to_dict()
         
         # Verify password
-        if not check_password_hash(user_data['password'], data['password']):
+        if not check_password_hash(user_data['password'], password):
             return jsonify({'error': 'Invalid credentials'}), 401
         
         # Generate JWT token
@@ -391,5 +415,4 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=os.environ.get('FLASK_ENV') == 'development')
+    app.run(host='0.0.0.0', port=Config.PORT, debug=Config.DEBUG)
