@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google import genai
@@ -87,7 +87,7 @@ def register():
             'email': data['email'],
             'username': data['username'],
             'password': hashed_password,
-            'created_at': datetime.utcnow(),
+            'created_at': datetime.now(timezone.utc),
             'profile_completed': False
         }
         
@@ -171,7 +171,7 @@ def submit_profile():
             'initial_height': float(data['initial_height']),
             'initial_weight': float(data['initial_weight']),
             'profile_completed': True,
-            'updated_at': datetime.utcnow()
+            'updated_at': datetime.now(timezone.utc)
         }
         
         db.collection('users').document(user_id).update(profile_data)
@@ -220,7 +220,7 @@ def submit_daily_data():
             'breakfast': data['breakfast'],
             'lunch': data['lunch'],
             'dinner': data['dinner'],
-            'created_at': datetime.utcnow()
+            'created_at': datetime.now(timezone.utc)
         }
         
         doc_ref = db.collection('daily_entries').add(entry_data)
@@ -284,11 +284,14 @@ def get_daily_suggestion():
             return jsonify({'error': 'Health suggestions are currently unavailable'}), 503
         
         # Check if user already got suggestion today using modern filter syntax
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
+        # Convert date to datetime for Firestore compatibility
+        today_datetime = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
+        
         existing_suggestion = db.collection('health_suggestions').where(
             filter=firestore.FieldFilter('user_id', '==', user_id)
         ).where(
-            filter=firestore.FieldFilter('date', '==', today)
+            filter=firestore.FieldFilter('date', '==', today_datetime)
         ).get()
         
         if existing_suggestion:
@@ -311,7 +314,7 @@ def get_daily_suggestion():
         # Prepare context for AI
         context = f"""
         User Profile:
-        - Age: {datetime.utcnow().year - user_data.get('birth_date', datetime.utcnow()).year if user_data.get('birth_date') else 'Unknown'}
+        - Age: {datetime.now(timezone.utc).year - user_data.get('birth_date', datetime.now(timezone.utc)).year if user_data.get('birth_date') else 'Unknown'}
         - Initial Height: {user_data.get('initial_height', 'Unknown')} cm
         - Initial Weight: {user_data.get('initial_weight', 'Unknown')} kg
         
@@ -341,12 +344,12 @@ def get_daily_suggestion():
         )
         suggestion = response.text
         
-        # Store suggestion in database
+        # Store suggestion in database with datetime object
         suggestion_data = {
             'user_id': user_id,
-            'date': today,
+            'date': today_datetime,  # Store as datetime object
             'suggestion': suggestion,
-            'created_at': datetime.utcnow()
+            'created_at': datetime.now(timezone.utc)
         }
         
         db.collection('health_suggestions').add(suggestion_data)

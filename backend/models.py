@@ -66,10 +66,18 @@ class Database:
     
     def get_health_suggestion_by_date(self, user_id, date):
         """Get health suggestion by user ID and date"""
+        # Ensure date is a datetime object for Firestore
+        if hasattr(date, 'date') and callable(date.date):
+            # It's already a datetime object
+            search_date = date
+        else:
+            # Convert date to datetime if needed
+            search_date = datetime.combine(date, datetime.min.time()).replace(tzinfo=timezone.utc)
+            
         return self.db.collection('health_suggestions').where(
             filter=firestore.FieldFilter('user_id', '==', user_id)
         ).where(
-            filter=firestore.FieldFilter('date', '==', date)
+            filter=firestore.FieldFilter('date', '==', search_date)
         ).get()
     
     def create_health_suggestion(self, suggestion_data):

@@ -3,6 +3,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import UserProfile from "./components/UserProfile";
 import HistoryView from "./components/HistoryView";
+import HealthSuggestions from "./components/HealthSuggestions";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("login");
@@ -24,11 +25,19 @@ function App() {
             onLogout={() => setCurrentPage("login")}
             onBack={() => setCurrentPage("login")}
             onViewHistory={() => setCurrentPage("history")}
+            onGetSuggestions={() => setCurrentPage("suggestions")}
           />
         );
       case "history":
         return (
           <HistoryView
+            onBack={() => setCurrentPage("profile")}
+            onLogout={() => setCurrentPage("login")}
+          />
+        );
+      case "suggestions":
+        return (
+          <HealthSuggestions
             onBack={() => setCurrentPage("profile")}
             onLogout={() => setCurrentPage("login")}
           />

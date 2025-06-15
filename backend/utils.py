@@ -1,7 +1,7 @@
 from google import genai
 from config import Config
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class AIService:
         """Build context for AI prompt"""
         context = f"""
         User Profile:
-        - Age: {datetime.utcnow().year - user_data.get('birth_date', datetime.utcnow()).year if user_data.get('birth_date') else 'Unknown'}
+        - Age: {datetime.now(timezone.utc).year - user_data.get('birth_date', datetime.now(timezone.utc)).year if user_data.get('birth_date') else 'Unknown'}
         - Initial Height: {user_data.get('initial_height', 'Unknown')} cm
         - Initial Weight: {user_data.get('initial_weight', 'Unknown')} kg
         

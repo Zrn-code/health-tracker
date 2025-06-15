@@ -101,8 +101,11 @@ def get_daily_suggestion():
             return jsonify({'error': 'Health suggestions are currently unavailable'}), 503
         
         # Check if user already got suggestion today
-        today = datetime.utcnow().date()
-        existing_suggestion = db_instance.get_health_suggestion_by_date(user_id, today)
+        today = datetime.now(timezone.utc).date()
+        # Convert date to datetime for Firestore compatibility
+        today_datetime = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
+        
+        existing_suggestion = db_instance.get_health_suggestion_by_date(user_id, today_datetime)
         
         if existing_suggestion:
             log_user_action(user_id, 'HEALTH_SUGGESTION_RETRIEVED', 'Retrieved existing daily suggestion')
@@ -122,12 +125,12 @@ def get_daily_suggestion():
         # Generate suggestion using AI
         suggestion = ai_service.generate_health_suggestion(user_data, recent_entries)
         
-        # Store suggestion in database
+        # Store suggestion in database with datetime object
         suggestion_data = {
             'user_id': user_id,
-            'date': today,
+            'date': today_datetime,  # Store as datetime object
             'suggestion': suggestion,
-            'created_at': datetime.utcnow()
+            'created_at': datetime.now(timezone.utc)
         }
         
         db_instance.create_health_suggestion(suggestion_data)
