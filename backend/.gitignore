@@ -1,1 +1,48 @@
-*.json
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Testing
+.coverage
+.pytest_cache/
+*.cover
+
+# Logs
+logs/
+*.log
+
+# Firebase credentials
+hello.json
+firebase-config.json
+service-account.json
+*-firebase-adminsdk-*.json
+
+# Environment variables
+.env*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Config files with sensitive data
+config.json
+secrets.json

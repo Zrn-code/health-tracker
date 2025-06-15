@@ -16,7 +16,7 @@ app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-secret-key
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 
 # Initialize extensions
-CORS(app, origins=['http://localhost:5000', 'https://your-firebase-app.web.app'])
+CORS(app, origins=['http://localhost:5173', 'http://localhost:3000', 'https://your-firebase-app.web.app'])
 jwt = JWTManager(app)
 
 # Initialize Firebase Admin SDK
@@ -203,7 +203,7 @@ def submit_daily_data():
         return jsonify({
             'message': 'Daily data submitted successfully',
             'entry_id': doc_ref[1].id
-        }), 201
+        }, 201)
         
     except Exception as e:
         logger.error(f"Daily data submission error: {e}")
