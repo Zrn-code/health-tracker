@@ -18,3 +18,8 @@ gunicorn
 # Development & Testing (optional)
 pytest
 pytest-flask
+requests
+pytest-cov
+pytest-mock
+pytest-xdist
+flask_restx

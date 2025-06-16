@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from logger import get_logger, log_auth_attempt, log_registration_attempt, log_user_action
+from logger import get_logger, log_auth_attempt, log_registration_attempt, log_security_event, log_user_action
 from models import db_instance
 
 logger = get_logger('auth')
@@ -150,4 +150,57 @@ def submit_profile():
         
     except Exception as e:
         logger.error(f"Profile submission error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@auth_bp.route('/delete_account', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    """Delete user account and all associated data with password confirmation"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        # Require password confirmation
+        if not data or not data.get('password'):
+            return jsonify({'error': 'Password confirmation required'}), 400
+        
+        # Get user document to verify existence and password
+        user_doc = db_instance.get_user_by_id(user_id)
+        if not user_doc.exists:
+            return jsonify({'error': 'User not found'}), 404
+        
+        user_data = user_doc.to_dict()
+        
+        # Verify password
+        if not check_password_hash(user_data['password'], data['password']):
+            log_security_event('ACCOUNT_DELETE_FAILED', f'Invalid password attempt for user {user_id}', user_id)
+            return jsonify({'error': 'Invalid password'}), 401
+        
+        # Delete user's daily entries
+        daily_entries = db_instance.db.collection('daily_entries').where(
+            filter=db_instance.db.FieldFilter('user_id', '==', user_id)
+        ).get()
+        
+        for entry in daily_entries:
+            entry.reference.delete()
+        
+        # Delete user's health suggestions
+        health_suggestions = db_instance.db.collection('health_suggestions').where(
+            filter=db_instance.db.FieldFilter('user_id', '==', user_id)
+        ).get()
+        
+        for suggestion in health_suggestions:
+            suggestion.reference.delete()
+        
+        # Delete user document
+        db_instance.db.collection('users').document(user_id).delete()
+        
+        log_user_action(user_id, 'ACCOUNT_DELETED', 'User account and all data deleted successfully')
+        
+        return jsonify({
+            'message': 'Account and all associated data deleted successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Account deletion error: {e}")
         return jsonify({'error': 'Internal server error'}), 500
