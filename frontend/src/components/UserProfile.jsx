@@ -89,14 +89,17 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/submit_daily_data", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/health/daily-entry",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await response.json();
 
@@ -128,7 +131,7 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/profile", {
+      const response = await fetch("http://localhost:5000/api/profile/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

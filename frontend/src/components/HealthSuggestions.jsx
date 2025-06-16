@@ -18,7 +18,7 @@ const HealthSuggestions = ({ onBack, onLogout }) => {
       }
 
       const response = await fetch(
-        "http://localhost:5000/get_daily_suggestion",
+        "http://localhost:5000/api/health/suggestion",
         {
           method: "POST",
           headers: {

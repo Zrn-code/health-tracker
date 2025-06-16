@@ -23,7 +23,7 @@ const HistoryView = ({ onBack, onLogout }) => {
       }
 
       const response = await fetch(
-        "http://localhost:5000/get_daily_data?limit=100",
+        "http://localhost:5000/api/health/daily-entries",
         {
           method: "GET",
           headers: {
