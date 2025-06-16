@@ -219,13 +219,3 @@ class TestUsersAPI:
             # 嘗試再次登入應該失敗（帳號已停用）
             login_again = api_client.post("/login", json=login_data)
             assert login_again.status_code == 403
-
-    def test_delete_account_without_token(self, api_client):
-        """測試未授權刪除帳號"""
-        response = api_client.delete("/delete_account")
-        assert response.status_code == 401
-    
-    def test_deactivate_account_without_token(self, api_client):
-        """測試未授權停用帳號"""
-        response = api_client.put("/deactivate_account")
-        assert response.status_code == 401

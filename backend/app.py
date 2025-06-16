@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 import logging
@@ -23,17 +23,29 @@ def create_app(config_name=None):
         for error in config_errors:
             print(f"Configuration error: {error}")
     
-    # Initialize extensions
+    # Initialize CORS with more explicit configuration
     CORS(app, 
          origins=config.CORS_ORIGINS,
          methods=config.CORS_METHODS,
          allow_headers=config.CORS_ALLOW_HEADERS,
-         supports_credentials=config.CORS_SUPPORTS_CREDENTIALS)
+         supports_credentials=config.CORS_SUPPORTS_CREDENTIALS,
+         expose_headers=['Content-Type', 'Authorization'],
+         max_age=86400)  # Cache preflight for 24 hours
     
     jwt = JWTManager(app)
     
     # Initialize logging
     health_logger.init_app(app)
+    
+    # Add explicit OPTIONS handler for all routes
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = make_response()
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+            response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+            return response
     
     # Register blueprints with API prefix
     app.register_blueprint(auth_bp, url_prefix='/api/auth')

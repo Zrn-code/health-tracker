@@ -45,10 +45,12 @@ class TestAPIIntegration:
             profile_response = api_client.post("/submit_profile", json=profile_data, headers=headers)
             assert profile_response.status_code == 200
             
-            # 4. 提交日常數據
-            unique_date = f"2024-{((int(time.time()) % 11) + 1):02d}-{((int(time.time()) % 28) + 1):02d}"
+            # 4. 提交日常數據 - 使用更穩定的日期生成
+            import datetime
+            today = datetime.date.today()
+            test_date = today.replace(day=min(15, today.day))  # 確保日期有效
             daily_data = {
-                "date": unique_date,
+                "date": test_date.isoformat(),
                 "height": 175.0,
                 "weight": 72.0,
                 "breakfast": "燕麥粥、水果",

@@ -41,10 +41,15 @@ class TestDailyDataAPI:
         if not access_token:
             pytest.skip("無法設置認證用戶")
         
-        # 使用唯一日期避免衝突
-        unique_date = f"2024-01-{(int(time.time()) % 28) + 1:02d}"
+        # 使用更穩定的日期生成方法
+        import datetime
+        today = datetime.date.today()
+        # 使用當前時間的秒數來生成一個1-28之間的日期，確保在所有月份都有效
+        day = (int(time.time()) % 28) + 1
+        test_date = today.replace(day=day)
+        
         daily_data = {
-            "date": unique_date,
+            "date": test_date.isoformat(),
             "height": 170.5,
             "weight": 70.5,
             "breakfast": "燕麥粥、牛奶",

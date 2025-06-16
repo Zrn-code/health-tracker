@@ -30,61 +30,61 @@ def api_client():
             self.session = requests.Session()
             self.session.headers.update(headers)
             
-        def get(self, endpoint: str, params=None, headers=None, **kwargs):
+        def _make_request(self, method: str, endpoint: str, **kwargs):
+            """統一的請求處理方法"""
             url = f"{self.base_url}{endpoint}"
             request_headers = self.session.headers.copy()
-            if headers:
-                request_headers.update(headers)
+            if 'headers' in kwargs:
+                request_headers.update(kwargs.pop('headers'))
+            
             try:
-                return self.session.get(url, params=params, headers=request_headers, timeout=TEST_CONFIG["timeout"], **kwargs)
+                response = self.session.request(
+                    method=method,
+                    url=url,
+                    headers=request_headers,
+                    timeout=TEST_CONFIG["timeout"],
+                    **kwargs
+                )
+                return response
             except requests.exceptions.RequestException as e:
-                print(f"Request failed: {e}")
+                print(f"Request failed: {method} {url} - {e}")
                 raise
+            
+        def get(self, endpoint: str, params=None, headers=None, **kwargs):
+            return self._make_request('GET', endpoint, params=params, headers=headers, **kwargs)
             
         def post(self, endpoint: str, data=None, json=None, headers=None, **kwargs):
-            url = f"{self.base_url}{endpoint}"
-            request_headers = self.session.headers.copy()
-            if headers:
-                request_headers.update(headers)
-            try:
-                return self.session.post(url, data=data, json=json, headers=request_headers, timeout=TEST_CONFIG["timeout"], **kwargs)
-            except requests.exceptions.RequestException as e:
-                print(f"Request failed: {e}")
-                raise
+            return self._make_request('POST', endpoint, data=data, json=json, headers=headers, **kwargs)
             
         def put(self, endpoint: str, data=None, json=None, headers=None, **kwargs):
-            url = f"{self.base_url}{endpoint}"
-            request_headers = self.session.headers.copy()
-            if headers:
-                request_headers.update(headers)
-            try:
-                return self.session.put(url, data=data, json=json, headers=request_headers, timeout=TEST_CONFIG["timeout"], **kwargs)
-            except requests.exceptions.RequestException as e:
-                print(f"Request failed: {e}")
-                raise
+            return self._make_request('PUT', endpoint, data=data, json=json, headers=headers, **kwargs)
             
         def delete(self, endpoint: str, json=None, headers=None, **kwargs):
-            url = f"{self.base_url}{endpoint}"
-            request_headers = self.session.headers.copy()
-            if headers:
-                request_headers.update(headers)
-            try:
-                return self.session.delete(url, json=json, headers=request_headers, timeout=TEST_CONFIG["timeout"], **kwargs)
-            except requests.exceptions.RequestException as e:
-                print(f"Request failed: {e}")
-                raise
+            return self._make_request('DELETE', endpoint, json=json, headers=headers, **kwargs)
             
         def patch(self, endpoint: str, data=None, json=None, headers=None, **kwargs):
-            url = f"{self.base_url}{endpoint}"
-            request_headers = self.session.headers.copy()
-            if headers:
-                request_headers.update(headers)
-            try:
-                return self.session.patch(url, data=data, json=json, headers=request_headers, timeout=TEST_CONFIG["timeout"], **kwargs)
-            except requests.exceptions.RequestException as e:
-                print(f"Request failed: {e}")
-                raise
+            return self._make_request('PATCH', endpoint, data=data, json=json, headers=headers, **kwargs)
     
+    return APIClient(TEST_CONFIG["base_url"], TEST_CONFIG["headers"])
+
+@pytest.fixture(scope="function")
+def unique_user_data():
+    """生成唯一的測試用戶數據"""
+    unique_id = generate_unique_id()
+    return {
+        "email": f"test_{unique_id}@example.com",
+        "username": f"testuser_{unique_id}",
+        "password": "testpassword123"
+    }
+
+@pytest.fixture(scope="function")
+def unique_profile_data():
+    """生成唯一的測試個人資料數據"""
+    return {
+        "birth_date": "1990-01-01",
+        "initial_height": 170.0,
+        "initial_weight": 70.0
+    }
     return APIClient(TEST_CONFIG["base_url"], TEST_CONFIG["headers"])
 
 @pytest.fixture(scope="function")
