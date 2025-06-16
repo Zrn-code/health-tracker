@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiRequest } from "../config/api";
 
 const HealthSuggestions = ({ onBack, onLogout }) => {
   const [suggestion, setSuggestion] = useState("");
@@ -17,16 +18,12 @@ const HealthSuggestions = ({ onBack, onLogout }) => {
         return;
       }
 
-      const response = await fetch(
-        "http://localhost:5000/api/health/suggestion",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await apiRequest("health/suggestion", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();

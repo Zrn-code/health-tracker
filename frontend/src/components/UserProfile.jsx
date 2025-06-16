@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { apiRequest } from "../config/api";
 
 const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
   const [profile, setProfile] = useState(null);
@@ -34,22 +35,37 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/profile", {
+      console.log("Fetching profile with token:", token); // Debug log
+
+      const response = await apiRequest("profile/", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
       });
 
+      console.log("Profile response status:", response.status); // Debug log
+
       if (response.ok) {
         const data = await response.json();
-        setProfile(data);
+        console.log("Profile data received:", data); // Debug log
+
+        // Handle different response formats
+        if (data.data) {
+          // If response has a 'data' wrapper
+          setProfile(data.data);
+        } else {
+          // If response is the profile data directly
+          setProfile(data);
+        }
       } else if (response.status === 401) {
+        console.log("Unauthorized, logging out"); // Debug log
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
         onLogout();
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Profile fetch error:", response.status, errorData); // Debug log
         setError("Failed to load profile");
       }
     } catch (error) {
@@ -89,17 +105,14 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:5000/api/health/daily-entry",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await apiRequest("health/daily-entry", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
@@ -114,11 +127,17 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
           dinner: "",
         });
       } else {
-        setSubmitMessage(`Error: ${data.error}`);
+        setSubmitMessage(
+          `Error: ${data.error || data.message || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error submitting daily data:", error);
-      setSubmitMessage("Network error occurred");
+      if (error.name === "AbortError") {
+        setSubmitMessage("Request timeout. Please try again.");
+      } else {
+        setSubmitMessage("Network error occurred");
+      }
     } finally {
       setSubmitLoading(false);
     }
@@ -131,7 +150,7 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/profile/", {
+      const response = await apiRequest("profile/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -153,11 +172,17 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
           initial_weight: "",
         });
       } else {
-        setProfileSubmitMessage(`Error: ${data.error}`);
+        setProfileSubmitMessage(
+          `Error: ${data.error || data.message || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error submitting profile:", error);
-      setProfileSubmitMessage("Network error occurred");
+      if (error.name === "AbortError") {
+        setProfileSubmitMessage("Request timeout. Please try again.");
+      } else {
+        setProfileSubmitMessage("Network error occurred");
+      }
     } finally {
       setProfileSubmitLoading(false);
     }
@@ -165,10 +190,28 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
 
   const formatDate = (dateObj) => {
     if (!dateObj) return "N/A";
-    if (dateObj._seconds) {
-      return new Date(dateObj._seconds * 1000).toLocaleDateString();
+
+    try {
+      // Handle Firestore timestamp format
+      if (dateObj._seconds) {
+        return new Date(dateObj._seconds * 1000).toLocaleDateString();
+      }
+
+      // Handle ISO string or regular date object
+      if (typeof dateObj === "string" || dateObj instanceof Date) {
+        return new Date(dateObj).toLocaleDateString();
+      }
+
+      // Handle timestamp numbers
+      if (typeof dateObj === "number") {
+        return new Date(dateObj).toLocaleDateString();
+      }
+
+      return "N/A";
+    } catch (error) {
+      console.error("Error formatting date:", error, dateObj);
+      return "N/A";
     }
-    return new Date(dateObj).toLocaleDateString();
   };
 
   if (loading) {
@@ -228,7 +271,9 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
                     Username
                   </label>
                   <p className="text-lg text-gray-800">
-                    {profile?.username || "N/A"}
+                    {profile?.username ||
+                      profile?.data?.username ||
+                      "Loading..."}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded">
@@ -236,7 +281,7 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
                     Email
                   </label>
                   <p className="text-lg text-gray-800">
-                    {profile?.email || "N/A"}
+                    {profile?.email || profile?.data?.email || "Loading..."}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded">
@@ -245,19 +290,23 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
                   </label>
                   <p
                     className={`text-lg font-semibold ${
-                      profile?.profile_completed
+                      profile?.profile_completed ||
+                      profile?.data?.profile_completed
                         ? "text-green-600"
                         : "text-orange-600"
                     }`}
                   >
-                    {profile?.profile_completed ? "Completed" : "Incomplete"}
+                    {profile?.profile_completed ||
+                    profile?.data?.profile_completed
+                      ? "Completed"
+                      : "Incomplete"}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Health Information */}
-            {profile?.profile_completed ? (
+            {profile?.profile_completed || profile?.data?.profile_completed ? (
               <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
                   Health Information
@@ -268,7 +317,9 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
                       Birth Date
                     </label>
                     <p className="text-lg text-gray-800">
-                      {formatDate(profile?.birth_date)}
+                      {formatDate(
+                        profile?.birth_date || profile?.data?.birth_date
+                      )}
                     </p>
                   </div>
                   <div className="bg-green-50 p-4 rounded">
@@ -276,8 +327,11 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
                       Initial Height
                     </label>
                     <p className="text-lg text-gray-800">
-                      {profile?.initial_height
-                        ? `${profile.initial_height} cm`
+                      {profile?.initial_height || profile?.data?.initial_height
+                        ? `${
+                            profile?.initial_height ||
+                            profile?.data?.initial_height
+                          } cm`
                         : "N/A"}
                     </p>
                   </div>
@@ -286,8 +340,11 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
                       Initial Weight
                     </label>
                     <p className="text-lg text-gray-800">
-                      {profile?.initial_weight
-                        ? `${profile.initial_weight} kg`
+                      {profile?.initial_weight || profile?.data?.initial_weight
+                        ? `${
+                            profile?.initial_weight ||
+                            profile?.data?.initial_weight
+                          } kg`
                         : "N/A"}
                     </p>
                   </div>
@@ -372,7 +429,9 @@ const UserProfile = ({ onLogout, onBack, onViewHistory, onGetSuggestions }) => {
 
           {/* Right Column - Profile Form or Daily Data Input Form */}
           <div className="lg:col-span-2">
-            {!profile?.profile_completed ? (
+            {!(
+              profile?.profile_completed || profile?.data?.profile_completed
+            ) ? (
               // Profile Completion Form
               <div className="bg-white rounded-lg shadow-lg p-6">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-6">

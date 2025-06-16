@@ -18,7 +18,7 @@ class TestDailyDataAPI:
         }
         
         # 註冊用戶
-        register_response = api_client.post("/register", json=unique_user_data)
+        register_response = api_client.post("/api/auth/register", json=unique_user_data)
         
         if register_response.status_code not in [200, 201]:
             return None
@@ -28,7 +28,7 @@ class TestDailyDataAPI:
             "username": unique_user_data["username"],
             "password": unique_user_data["password"]
         }
-        login_response = api_client.post("/login", json=login_data)
+        login_response = api_client.post("/api/auth/login", json=login_data)
         
         if login_response.status_code != 200:
             return None
@@ -58,7 +58,7 @@ class TestDailyDataAPI:
         }
         
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = api_client.post("/submit_daily_data", json=daily_data, headers=headers)
+        response = api_client.post("/api/health/daily-entry", json=daily_data, headers=headers)
         
         assert response.status_code in [200, 201]
         data = response.json()
@@ -78,12 +78,12 @@ class TestDailyDataAPI:
         }
         
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = api_client.post("/submit_daily_data", json=invalid_data, headers=headers)
+        response = api_client.post("/api/health/daily-entry", json=invalid_data, headers=headers)
         
         assert response.status_code == 400
         data = response.json()
         assert "error" in data
-    
+
     def test_get_daily_data_success(self, api_client):
         """測試獲取日常數據"""
         access_token = self.setup_authenticated_user(api_client)
@@ -91,7 +91,7 @@ class TestDailyDataAPI:
             pytest.skip("無法設置認證用戶")
         
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = api_client.get("/get_daily_data", headers=headers)
+        response = api_client.get("/api/health/daily-entries", headers=headers)
         
         assert response.status_code == 200
         data = response.json()
@@ -101,7 +101,7 @@ class TestDailyDataAPI:
     
     def test_get_daily_data_unauthorized(self, api_client):
         """測試未授權訪問日常數據"""
-        response = api_client.get("/get_daily_data")
+        response = api_client.get("/api/health/daily-entries")
         assert response.status_code == 401
     
     def test_get_health_suggestion(self, api_client):
@@ -111,7 +111,7 @@ class TestDailyDataAPI:
             pytest.skip("無法設置認證用戶")
         
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = api_client.post("/get_daily_suggestion", headers=headers)
+        response = api_client.post("/api/health/suggestion", headers=headers)
         
         # 可能返回 200（成功）或 503（服務不可用）
         assert response.status_code in [200, 503]

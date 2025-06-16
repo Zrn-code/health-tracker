@@ -70,7 +70,10 @@ class FirestoreRepository(BaseRepository):
             if doc.exists:
                 data = doc.to_dict()
                 data['id'] = doc.id
+                logger.debug(f"Retrieved document {id}: {data}")
                 return data
+            else:
+                logger.warning(f"Document {id} not found in collection {self.collection_name}")
             return None
         except Exception as e:
             logger.error(f"Get by ID operation failed: {e}")
@@ -152,7 +155,10 @@ class DailyEntryRepository(FirestoreRepository):
         """Get daily entry by user ID and date"""
         try:
             # Convert date to datetime for Firestore compatibility
-            entry_datetime = datetime.combine(entry_date, datetime.min.time())
+            if isinstance(entry_date, date) and not isinstance(entry_date, datetime):
+                entry_datetime = datetime.combine(entry_date, datetime.min.time())
+            else:
+                entry_datetime = entry_date
             
             docs = self.db.collection(self.collection_name).where(
                 filter=firestore.FieldFilter('user_id', '==', user_id)
@@ -214,7 +220,10 @@ class HealthSuggestionRepository(FirestoreRepository):
     def get_by_user_and_date(self, user_id: str, suggestion_date: date) -> Optional[Dict[str, Any]]:
         """Get health suggestion by user ID and date"""
         try:
-            suggestion_datetime = datetime.combine(suggestion_date, datetime.min.time())
+            if isinstance(suggestion_date, date) and not isinstance(suggestion_date, datetime):
+                suggestion_datetime = datetime.combine(suggestion_date, datetime.min.time())
+            else:
+                suggestion_datetime = suggestion_date
             
             docs = self.db.collection(self.collection_name).where(
                 filter=firestore.FieldFilter('user_id', '==', user_id)

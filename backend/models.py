@@ -47,10 +47,16 @@ class Database:
     
     def get_daily_entry_by_date(self, user_id, date):
         """Get daily entry by user ID and date"""
+        # Convert date to datetime if needed
+        if isinstance(date, datetime.date) and not isinstance(date, datetime):
+            search_date = datetime.combine(date, datetime.min.time())
+        else:
+            search_date = date
+            
         return self.db.collection('daily_entries').where(
             filter=firestore.FieldFilter('user_id', '==', user_id)
         ).where(
-            filter=firestore.FieldFilter('date', '==', date)
+            filter=firestore.FieldFilter('date', '==', search_date)
         ).get()
     
     def create_daily_entry(self, entry_data):
@@ -67,7 +73,10 @@ class Database:
     def get_health_suggestion_by_date(self, user_id, date):
         """Get health suggestion by user ID and date"""
         # Ensure date is a datetime object for Firestore
-        if hasattr(date, 'date') and callable(date.date):
+        if isinstance(date, datetime.date) and not isinstance(date, datetime):
+            # Convert date to datetime
+            search_date = datetime.combine(date, datetime.min.time()).replace(tzinfo=timezone.utc)
+        elif hasattr(date, 'date') and callable(date.date):
             # It's already a datetime object
             search_date = date
         else:

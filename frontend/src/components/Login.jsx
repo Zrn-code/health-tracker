@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiRequest } from "../config/api";
 
 const Login = ({ onSwitchToRegister, onLoginSuccess }) => {
   const [formData, setFormData] = useState({
@@ -21,8 +22,7 @@ const Login = ({ onSwitchToRegister, onLoginSuccess }) => {
     setError("");
 
     try {
-      // Updated API endpoint to match documentation
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await apiRequest("auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -41,6 +41,9 @@ const Login = ({ onSwitchToRegister, onLoginSuccess }) => {
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("userId", data.user_id);
 
+        console.log("Stored token:", data.access_token);
+        console.log("Stored userId:", data.user_id);
+
         console.log("Login successful, calling onLoginSuccess"); // Debug log
         // Navigate to profile page
         if (onLoginSuccess) {
@@ -48,13 +51,19 @@ const Login = ({ onSwitchToRegister, onLoginSuccess }) => {
         }
       } else {
         console.error("Login failed:", response.status, data); // Debug log
-        setError(data.error || `Login failed: ${response.status}`);
+        setError(
+          data.error || data.message || `Login failed: ${response.status}`
+        );
       }
     } catch (error) {
       console.error("Network error:", error); // Debug log
-      setError(
-        "Network error. Please check if the server is running on http://localhost:5000"
-      );
+      if (error.name === "AbortError") {
+        setError(
+          "Request timeout. Please check your connection and try again."
+        );
+      } else {
+        setError("Network error. Please check your connection and try again.");
+      }
     } finally {
       setLoading(false);
     }

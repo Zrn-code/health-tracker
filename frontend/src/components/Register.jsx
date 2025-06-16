@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiRequest } from "../config/api";
 
 const Register = ({ onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
@@ -45,11 +46,8 @@ const Register = ({ onSwitchToLogin }) => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await apiRequest("auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           email: formData.email,
           username: formData.username,
@@ -83,8 +81,12 @@ const Register = ({ onSwitchToLogin }) => {
         setError(data.error || "Registration failed");
       }
     } catch (err) {
-      setError("Network error, please try again later");
       console.error("Register error:", err);
+      if (err.name === "AbortError") {
+        setError("Request timeout. Please try again.");
+      } else {
+        setError("Network error, please try again later");
+      }
     } finally {
       setLoading(false);
     }

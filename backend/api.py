@@ -29,14 +29,28 @@ def create_response(data: Any = None, message: str = None, status_code: int = 20
     
     return response, status_code
 
+def get_request_data():
+    """Helper function to safely get request JSON data"""
+    try:
+        if not request.is_json:
+            return None, "Content-Type must be application/json"
+        
+        data = request.get_json()
+        if data is None:
+            return None, "Invalid JSON data"
+        
+        return data, None
+    except Exception as e:
+        return None, f"Failed to parse JSON: {str(e)}"
+
 # Authentication endpoints
 @auth_bp.route('/register', methods=['POST'])
 def register():
     """User registration endpoint"""
     try:
-        data = request.get_json()
-        if not data:
-            return create_response(message="Request body required", status_code=400)
+        data, error = get_request_data()
+        if error:
+            return create_response(message=error, status_code=400)
         
         result = user_service.register_user(data)
         
@@ -50,8 +64,8 @@ def register():
         
     except HealthTrackerException as e:
         log_registration_attempt(
-            data.get('email', '') if 'data' in locals() else '',
-            data.get('username', '') if 'data' in locals() else '',
+            data.get('email', '') if 'data' in locals() and data else '',
+            data.get('username', '') if 'data' in locals() and data else '',
             False,
             e.message
         )
@@ -64,9 +78,9 @@ def register():
 def login():
     """User login endpoint"""
     try:
-        data = request.get_json()
-        if not data:
-            return create_response(message="Request body required", status_code=400)
+        data, error = get_request_data()
+        if error:
+            return create_response(message=error, status_code=400)
         
         username = data.get('username') or data.get('login')
         password = data.get('password')
@@ -92,13 +106,18 @@ def get_profile():
     """Get user profile"""
     try:
         user_id = get_jwt_identity()
+        logger.info(f"Getting profile for user: {user_id}")
+        
         profile = user_service.get_user_profile(user_id)
+        logger.info(f"Profile data retrieved: {profile}")
+        
         return create_response(profile)
         
     except HealthTrackerException as e:
+        logger.error(f"Profile service error: {e.message}")
         return create_response(message=e.message, status_code=e.status_code)
     except Exception as e:
-        logger.error(f"Get profile error: {e}")
+        logger.error(f"Get profile error: {e}", exc_info=True)
         return create_response(message="Internal server error", status_code=500)
 
 @profile_bp.route('/', methods=['POST'])
@@ -107,10 +126,9 @@ def update_profile():
     """Update user profile"""
     try:
         user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        if not data:
-            return create_response(message="Request body required", status_code=400)
+        data, error = get_request_data()
+        if error:
+            return create_response(message=error, status_code=400)
         
         result = user_service.update_user_profile(user_id, data)
         
@@ -130,9 +148,11 @@ def delete_account():
     """Delete user account"""
     try:
         user_id = get_jwt_identity()
-        data = request.get_json()
+        data, error = get_request_data()
+        if error:
+            return create_response(message=error, status_code=400)
         
-        if not data or not data.get('password'):
+        if not data.get('password'):
             return create_response(message="Password confirmation required", status_code=400)
         
         result = user_service.delete_user_account(user_id, data['password'])
@@ -154,10 +174,9 @@ def submit_daily_data():
     """Submit daily health data"""
     try:
         user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        if not data:
-            return create_response(message="Request body required", status_code=400)
+        data, error = get_request_data()
+        if error:
+            return create_response(message=error, status_code=400)
         
         result = health_service.submit_daily_data(user_id, data)
         

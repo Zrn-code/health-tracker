@@ -86,8 +86,18 @@ class UserService:
         if not user:
             raise NotFoundError("User not found")
         
+        logger.info(f"Raw user data from repository: {user}")
+        
         # Remove sensitive information
         safe_profile = {k: v for k, v in user.items() if k != 'password'}
+        
+        # Ensure all required fields are present
+        profile_fields = ['id', 'username', 'email', 'profile_completed', 'created_at']
+        for field in profile_fields:
+            if field not in safe_profile:
+                logger.warning(f"Missing field {field} in user profile")
+        
+        logger.info(f"Safe profile data: {safe_profile}")
         return safe_profile
     
     @staticmethod
@@ -100,9 +110,9 @@ class UserService:
         if not user_repo.get_by_id(user_id):
             raise NotFoundError("User not found")
         
-        # Update profile
+        # Update profile - validated_data already has datetime object
         profile_data = {
-            'birth_date': validated_data['birth_date'],
+            'birth_date': validated_data['birth_date'],  # Already converted to datetime
             'initial_height': validated_data['initial_height'],
             'initial_weight': validated_data['initial_weight'],
             'profile_completed': True,
@@ -151,10 +161,10 @@ class HealthService:
         if existing_entry:
             raise ConflictError("Entry already exists for this date")
         
-        # Create entry
+        # Create entry - convert date to datetime for Firestore
         entry_data = {
             'user_id': user_id,
-            'date': datetime.combine(validated_data['date'], datetime.min.time()),
+            'date': datetime.combine(validated_data['date'], datetime.min.time()),  # Convert to datetime
             'height': validated_data['height'],
             'weight': validated_data['weight'],
             'breakfast': validated_data['breakfast'],

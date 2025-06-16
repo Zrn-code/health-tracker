@@ -17,7 +17,7 @@ class TestAPIIntegration:
         }
         
         # 1. 註冊用戶
-        register_response = api_client.post("/register", json=register_data)
+        register_response = api_client.post("/api/auth/register", json=register_data)
         
         if register_response.status_code not in [200, 201]:
             pytest.skip("無法註冊用戶，跳過集成測試")
@@ -30,7 +30,7 @@ class TestAPIIntegration:
                 "username": register_data["username"],
                 "password": register_data["password"]
             }
-            login_response = api_client.post("/login", json=login_data)
+            login_response = api_client.post("/api/auth/login", json=login_data)
             assert login_response.status_code == 200
             
             access_token = login_response.json()["access_token"]
@@ -42,7 +42,7 @@ class TestAPIIntegration:
                 "initial_height": 175.0,
                 "initial_weight": 72.5
             }
-            profile_response = api_client.post("/submit_profile", json=profile_data, headers=headers)
+            profile_response = api_client.post("/api/profile/", json=profile_data, headers=headers)
             assert profile_response.status_code == 200
             
             # 4. 提交日常數據 - 使用更穩定的日期生成
@@ -57,18 +57,18 @@ class TestAPIIntegration:
                 "lunch": "雞胸肉沙拉",
                 "dinner": "蒸魚、蔬菜"
             }
-            daily_response = api_client.post("/submit_daily_data", json=daily_data, headers=headers)
+            daily_response = api_client.post("/api/health/daily-entry", json=daily_data, headers=headers)
             assert daily_response.status_code in [200, 201]
             
             # 5. 獲取日常數據
-            get_data_response = api_client.get("/get_daily_data", headers=headers)
+            get_data_response = api_client.get("/api/health/daily-entries", headers=headers)
             assert get_data_response.status_code == 200
             
             data = get_data_response.json()
             assert len(data["data"]) > 0
             
             # 6. 獲取個人資料
-            get_profile_response = api_client.get("/api/profile", headers=headers)
+            get_profile_response = api_client.get("/api/profile/", headers=headers)
             assert get_profile_response.status_code == 200
             
         except Exception as e:
@@ -96,13 +96,13 @@ class TestAPIIntegration:
         """測試認證流程"""
         # 測試未認證訪問受保護端點
         protected_endpoints = [
-            "/submit_profile",
-            "/submit_daily_data",
-            "/get_daily_data",
-            "/get_daily_suggestion",
-            "/api/profile"
+            "/api/profile/",
+            "/api/health/daily-entry",
+            "/api/health/daily-entries",
+            "/api/health/suggestion"
         ]
         
         for endpoint in protected_endpoints:
             response = api_client.get(endpoint)
+            assert response.status_code == 401, f"端點 {endpoint} 應該需要認證"
             assert response.status_code == 401, f"端點 {endpoint} 應該需要認證"

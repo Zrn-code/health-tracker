@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { apiRequest } from "../config/api";
 
 const HistoryView = ({ onBack, onLogout }) => {
   const [entries, setEntries] = useState([]);
@@ -22,23 +23,19 @@ const HistoryView = ({ onBack, onLogout }) => {
         return;
       }
 
-      const response = await fetch(
-        "http://localhost:5000/api/health/daily-entries",
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await apiRequest("health/daily-entries", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
         setEntries(data.data || []);
       } else if (response.status === 401) {
         localStorage.removeItem("token");
-        localStorage.removeItem("userId");
+        localStorage.removeItem("userId"); // Fixed typo from removeUser to removeItem
         onLogout();
       } else {
         setError("Failed to load history");
