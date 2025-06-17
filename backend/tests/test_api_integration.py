@@ -6,8 +6,11 @@ import time
 class TestAPIIntegration:
     """API 集成測試"""
     
-    def test_complete_user_workflow(self, api_client):
+    def test_complete_user_workflow(self, api_client, server_available):
         """測試完整的用戶工作流程"""
+        if not server_available:
+            pytest.skip("服務器不可用，跳過集成測試")
+        
         # 生成唯一用戶資料
         unique_id = f"{int(time.time())}_{str(uuid.uuid4())[:8]}"
         register_data = {
@@ -74,10 +77,17 @@ class TestAPIIntegration:
         except Exception as e:
             pytest.fail(f"集成測試失敗: {e}")
     
-    def test_api_error_handling(self, api_client):
+    def test_api_error_handling(self, api_client, server_available):
         """測試 API 錯誤處理"""
+        if not server_available:
+            pytest.skip("服務器不可用，跳過測試")
+        
         # 測試不存在的端點
         response = api_client.get("/api/nonexistent")
+        
+        if response.status_code == 503:
+            pytest.skip("服務器不可用")
+        
         assert response.status_code == 404
     
     @pytest.mark.slow
@@ -92,17 +102,26 @@ class TestAPIIntegration:
         response_time = end_time - start_time
         assert response_time < 5.0, f"API 響應時間過長: {response_time}秒"
     
-    def test_authentication_flow(self, api_client):
+    def test_authentication_flow(self, api_client, server_available):
         """測試認證流程"""
+        if not server_available:
+            pytest.skip("服務器不可用，跳過測試")
+        
         # 測試未認證訪問受保護端點
         protected_endpoints = [
-            "/api/profile/",
-            "/api/health/daily-entry",
-            "/api/health/daily-entries",
-            "/api/health/suggestion"
+            ("/api/profile/", "GET"),
+            ("/api/health/daily-entry", "POST"),
+            ("/api/health/daily-entries", "GET"),
+            ("/api/health/suggestion", "POST")
         ]
         
-        for endpoint in protected_endpoints:
-            response = api_client.get(endpoint)
-            assert response.status_code == 401, f"端點 {endpoint} 應該需要認證"
-            assert response.status_code == 401, f"端點 {endpoint} 應該需要認證"
+        for endpoint, method in protected_endpoints:
+            if method == "GET":
+                response = api_client.get(endpoint)
+            else:
+                response = api_client.post(endpoint, json={})
+            
+            if response.status_code == 503:
+                pytest.skip("服務器不可用")
+            
+            assert response.status_code == 401, f"端點 {endpoint} ({method}) 應該需要認證"

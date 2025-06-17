@@ -4,7 +4,7 @@ from datetime import datetime, date
 from werkzeug.security import generate_password_hash
 
 from services import UserService, HealthService
-from exceptions import ValidationError, ConflictError, AuthenticationError, NotFoundError
+from exceptions import ValidationError, ConflictError, AuthenticationError, NotFoundError, ServiceUnavailableError
 
 class TestUserService:
     """Test UserService class"""
@@ -155,6 +155,6 @@ class TestHealthService:
         """Test health suggestion when AI service is unavailable"""
         mock_ai_service.is_available.return_value = False
         
-        from exceptions import ServiceUnavailableError
         with pytest.raises(ServiceUnavailableError):
+            HealthService.generate_health_suggestion('user123')
             HealthService.generate_health_suggestion('user123')

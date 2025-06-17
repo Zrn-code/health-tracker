@@ -50,8 +50,7 @@ class ConflictError(HealthTrackerException):
         super().__init__(message, 409)
 
 class ServiceUnavailableError(HealthTrackerException):
-    """Raised when external service is unavailable"""
-    
+    """Service unavailable error"""
     def __init__(self, message: str = "Service temporarily unavailable"):
         super().__init__(message, 503)
 
@@ -69,4 +68,5 @@ def handle_exception(e: Exception) -> Dict[str, Any]:
     
     # Log unexpected errors
     logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+    return {'error': 'Internal server error'}, 500
     return {'error': 'Internal server error'}, 500
