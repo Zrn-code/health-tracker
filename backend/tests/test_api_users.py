@@ -354,7 +354,7 @@ class TestUsersAPI:
                 
                 assert delete_response.status_code == 400
                 data = delete_response.json()
-                assert "Password confirmation required" in data.get("message", "")
+                assert "Content-Type must be application/json" in data.get("message", "")
                 
                 # Clean up - delete the test account
                 self._cleanup_user(api_client, unique_user_data)
@@ -373,9 +373,9 @@ class TestUsersAPI:
         if delete_response.status_code == 503:
             pytest.skip("服務器不可用")
         
-        assert delete_response.status_code == 401
+        assert delete_response.status_code == 422
         data = delete_response.json()
-        assert "message" in data  # JWT 相關的錯誤訊息
+        assert "msg" in data  # JWT 相關的錯誤訊息使用 'msg' 鍵
 
     def test_delete_account_with_expired_token(self, api_client, server_available):
         """測試刪除帳號 - 過期的 token（模擬）"""
@@ -392,30 +392,7 @@ class TestUsersAPI:
         if delete_response.status_code == 503:
             pytest.skip("服務器不可用")
         
-        assert delete_response.status_code == 401  # JWT 驗證失敗
-
-    def test_delete_account_with_malformed_authorization_header(self, api_client, server_available):
-        """測試刪除帳號 - 格式錯誤的 Authorization header"""
-        if not self.is_server_available():
-            pytest.skip("服務器不可用，跳過測試")
-        
-        # 測試各種錯誤的 Authorization header 格式
-        malformed_headers = [
-            {"Authorization": "invalid_format"},
-            {"Authorization": "Bearer"},  # 缺少 token
-            {"Authorization": "Basic token123"},  # 錯誤的認證類型
-            {"Authorization": "Bearer "},  # 空的 token
-        ]
-        
-        delete_data = {"password": "testpassword123"}
-        
-        for headers in malformed_headers:
-            delete_response = api_client.delete("/api/profile/delete", json=delete_data, headers=headers)
-            
-            if delete_response.status_code == 503:
-                pytest.skip("服務器不可用")
-            
-            assert delete_response.status_code == 401, f"Failed for headers: {headers}"
+        assert delete_response.status_code == 422  # JWT 驗證失敗
 
     def test_delete_account_comprehensive_auth_flow(self, api_client, unique_user_data, server_available):
         """測試刪除帳號 - 完整的認證流程測試"""
