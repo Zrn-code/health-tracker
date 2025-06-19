@@ -9,12 +9,13 @@ class Config:
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
     
+    
     # CORS settings
     CORS_ORIGINS = [
         'http://localhost:5173',  # Vite dev server
         'http://localhost:3000',  # React dev server
-        'https://your-firebase-app.web.app',
-        'https://your-firebase-app.firebaseapp.com'
+        'https://interview-c8310.web.app',
+        'https://interview-c8310.firebaseapp.com'
     ]
     CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
     CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization']
