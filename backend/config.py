@@ -22,7 +22,7 @@ class Config:
     CORS_SUPPORTS_CREDENTIALS = True
     
     # Firebase settings
-    FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', '/secrect/firebase')
+    FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', 'hello.json')
     
     # Gemini AI settings
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')

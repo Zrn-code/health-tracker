@@ -52,9 +52,6 @@ def create_app(config_name=None):
     app.register_blueprint(profile_bp, url_prefix='/api/profile')
     app.register_blueprint(health_bp, url_prefix='/api/health')
     
-    # Legacy endpoints for backward compatibility
-    register_legacy_endpoints(app)
-    
     # Error handlers
     register_error_handlers(app)
     
@@ -69,113 +66,6 @@ def create_app(config_name=None):
     
     return app
 
-def register_legacy_endpoints(app):
-    """Register legacy endpoints for backward compatibility"""
-    from flask_jwt_extended import jwt_required, get_jwt_identity
-    from services import user_service, health_service
-    
-    @app.route('/register', methods=['POST'])
-    def legacy_register():
-        data = request.get_json()
-        try:
-            result = user_service.register_user(data)
-            return jsonify(result), 201
-        except HealthTrackerException as e:
-            return jsonify({'error': e.message}), e.status_code
-        except Exception as e:
-            return jsonify({'error': 'Internal server error'}), 500
-    
-    @app.route('/login', methods=['POST'])
-    def legacy_login():
-        data = request.get_json()
-        try:
-            username = data.get('username') or data.get('login')
-            password = data.get('password')
-            result = user_service.authenticate_user(username, password)
-            return jsonify(result), 200
-        except HealthTrackerException as e:
-            return jsonify({'error': e.message}), e.status_code
-        except Exception as e:
-            return jsonify({'error': 'Internal server error'}), 500
-    
-    @app.route('/submit_profile', methods=['POST'])
-    @jwt_required()
-    def legacy_submit_profile():
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        try:
-            result = user_service.update_user_profile(user_id, data)
-            return jsonify(result), 200
-        except HealthTrackerException as e:
-            return jsonify({'error': e.message}), e.status_code
-        except Exception as e:
-            return jsonify({'error': 'Internal server error'}), 500
-    
-    @app.route('/submit_daily_data', methods=['POST'])
-    @jwt_required()
-    def legacy_submit_daily_data():
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        try:
-            result = health_service.submit_daily_data(user_id, data)
-            return jsonify(result), 201
-        except HealthTrackerException as e:
-            return jsonify({'error': e.message}), e.status_code
-        except Exception as e:
-            return jsonify({'error': 'Internal server error'}), 500
-    
-    @app.route('/get_daily_data', methods=['GET'])
-    @jwt_required()
-    def legacy_get_daily_data():
-        user_id = get_jwt_identity()
-        limit = int(request.args.get('limit', 30))
-        try:
-            result = health_service.get_daily_data(user_id, limit)
-            return jsonify(result), 200
-        except HealthTrackerException as e:
-            return jsonify({'error': e.message}), e.status_code
-        except Exception as e:
-            return jsonify({'error': 'Internal server error'}), 500
-    
-    @app.route('/get_daily_suggestion', methods=['POST'])
-    @jwt_required()
-    def legacy_get_daily_suggestion():
-        user_id = get_jwt_identity()
-        try:
-            result = health_service.generate_health_suggestion(user_id)
-            return jsonify(result), 200
-        except HealthTrackerException as e:
-            return jsonify({'error': e.message}), e.status_code
-        except Exception as e:
-            return jsonify({'error': 'Internal server error'}), 500
-    
-    @app.route('/delete_account', methods=['DELETE'])
-    @jwt_required()
-    def legacy_delete_account():
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        try:
-            if not data or not data.get('password'):
-                return jsonify({'error': 'Password confirmation required'}), 400
-            result = user_service.delete_user_account(user_id, data['password'])
-            return jsonify(result), 200
-        except HealthTrackerException as e:
-            return jsonify({'error': e.message}), e.status_code
-        except Exception as e:
-            return jsonify({'error': 'Internal server error'}), 500
-    
-    # Keep existing /api/profile GET endpoint
-    @app.route('/api/profile', methods=['GET'])
-    @jwt_required()
-    def legacy_get_profile():
-        user_id = get_jwt_identity()
-        try:
-            profile = user_service.get_user_profile(user_id)
-            return jsonify(profile), 200
-        except HealthTrackerException as e:
-            return jsonify({'error': e.message}), e.status_code
-        except Exception as e:
-            return jsonify({'error': 'Internal server error'}), 500
 
 def register_error_handlers(app):
     """Register error handlers"""

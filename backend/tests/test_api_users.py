@@ -8,7 +8,7 @@ from conftest import unique_user_data
 @pytest.mark.api
 class TestUsersAPI:
     """用戶 API 測試"""
-    BASE_URL = "http://localhost:5000"
+    BASE_URL = "http://localhost:8080"
     
     def is_server_available(self):
         """檢查服務器是否可用"""

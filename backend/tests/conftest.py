@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 
 # 測試配置
 TEST_CONFIG = {
-    "base_url": "http://localhost:5000",
+    "base_url": "http://localhost:8080",
     "timeout": 10,
     "headers": {
         "Content-Type": "application/json",
