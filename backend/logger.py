@@ -31,11 +31,12 @@ class HealthTrackerLogger:
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         
-        # Use different rotation strategy for Windows
+        # Use different rotation strategy for Cloud Run
+        is_cloud_run = os.getenv('K_SERVICE') is not None
         is_windows = platform.system() == 'Windows'
         
-        if is_windows:
-            # For Windows, use simpler file handling to avoid permission issues
+        if is_cloud_run or is_windows:
+            # For Cloud Run and Windows, use simpler file handling to avoid permission issues
             main_handler = logging.FileHandler(
                 os.path.join(log_dir, 'health-tracker.log'),
                 mode='a',
@@ -105,8 +106,10 @@ class HealthTrackerLogger:
             self.logger.setLevel(logging.INFO)
     
     def setup_console_logging(self):
-        """Setup console logging for development"""
-        if self.app and self.app.debug:
+        """Setup console logging for development and Cloud Run"""
+        # Always enable console logging for Cloud Run
+        is_cloud_run = os.getenv('K_SERVICE') is not None
+        if (self.app and self.app.debug) or is_cloud_run:
             console_handler = logging.StreamHandler()
             console_formatter = logging.Formatter(
                 '%(asctime)s [%(levelname)s] %(name)s - %(message)s'

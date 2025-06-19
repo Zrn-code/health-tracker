@@ -7,7 +7,7 @@ class Config:
     
     # Security
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
     
     # CORS settings
     CORS_ORIGINS = [
@@ -21,13 +21,13 @@ class Config:
     CORS_SUPPORTS_CREDENTIALS = True
     
     # Firebase settings
-    FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', 'hello.json')
+    FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', '/secrect/firebase')
     
     # Gemini AI settings
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     
     # Server settings
-    PORT = int(os.environ.get('PORT', 5000))
+    PORT = int(os.environ.get('PORT', 8080))
     DEBUG = os.environ.get('FLASK_ENV') == 'development'
     
     # Database settings

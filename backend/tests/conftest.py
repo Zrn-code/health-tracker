@@ -20,7 +20,7 @@ def generate_unique_id():
     unique_id = str(uuid.uuid4())[:8]
     return f"{timestamp}_{unique_id}"
 
-def check_server_availability(base_url: str = "http://localhost:5000") -> bool:
+def check_server_availability(base_url: str = "http://localhost:8080") -> bool:
     """檢查服務器是否可用"""
     try:
         response = requests.get(f"{base_url}/health", timeout=5)
@@ -36,7 +36,7 @@ def check_server_availability(base_url: str = "http://localhost:5000") -> bool:
 class APIClient:
     """API client for testing"""
     
-    def __init__(self, base_url: str = "http://localhost:5000"):
+    def __init__(self, base_url: str = "http://localhost:8080"):
         self.base_url = base_url
         self.session = requests.Session()
         self._server_available = None

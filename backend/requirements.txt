@@ -1,10 +1,10 @@
 # Flask Framework
-Flask
-Flask-CORS
-Flask-JWT-Extended
+Flask==3.0.0
+Flask-CORS==4.0.0
+Flask-JWT-Extended==4.6.0
 
 # Security
-Werkzeug
+Werkzeug==3.0.1
 
 # Google Cloud & Firebase
 google-cloud-firestore
@@ -12,14 +12,5 @@ firebase-admin
 google-genai
 
 # Utilities
-python-dotenv
-gunicorn
-
-# Development & Testing (optional)
-pytest
-pytest-flask
-requests
-pytest-cov
-pytest-mock
-pytest-xdist
-flask_restx
+python-dotenv==1.0.0
+gunicorn==21.2.0
