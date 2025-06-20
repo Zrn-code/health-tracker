@@ -59,6 +59,74 @@ delete_account_model = profile_ns.model('DeleteAccountRequest', {
     'password': fields.String(required=True, description='Password confirmation')
 })
 
+# Define response models for documentation - 修正為實際返回的格式
+auth_response_model = auth_ns.model('AuthResponse', {
+    'access_token': fields.String(description='JWT access token'),
+    'user_id': fields.Integer(description='User ID'),
+    'username': fields.String(description='Username'),
+    'email': fields.String(description='Email address')
+})
+
+error_model = auth_ns.model('ErrorResponse', {
+    'message': fields.String(description='Error message')
+})
+
+# Profile 響應模型需要與實際返回的數據匹配
+profile_response_model = profile_ns.model('ProfileResponse', {
+    'user_id': fields.Integer(description='User ID'),
+    'username': fields.String(description='Username'),
+    'email': fields.String(description='Email address'),
+    'age': fields.Integer(description='User age', allow_null=True),
+    'gender': fields.String(description='User gender', allow_null=True),
+    'height': fields.Float(description='Height in cm', allow_null=True),
+    'weight': fields.Float(description='Weight in kg', allow_null=True),
+    'activity_level': fields.String(description='Activity level', allow_null=True),
+    'health_goals': fields.List(fields.String, description='Health goals', allow_null=True),
+    'birth_date': fields.String(description='Birth date', allow_null=True),
+    'initial_height': fields.Float(description='Initial height in cm', allow_null=True),
+    'initial_weight': fields.Float(description='Initial weight in kg', allow_null=True),
+    'created_at': fields.String(description='Account creation date'),
+    'updated_at': fields.String(description='Last profile update date', allow_null=True)
+})
+
+# Daily entry 響應模型
+daily_entry_response_model = health_ns.model('DailyEntryResponse', {
+    'id': fields.Integer(description='Entry ID'),
+    'user_id': fields.Integer(description='User ID'),
+    'date': fields.String(description='Entry date'),
+    'weight': fields.Float(description='Weight in kg', allow_null=True),
+    'height': fields.Float(description='Height in cm', allow_null=True),
+    'sleep_hours': fields.Float(description='Hours of sleep', allow_null=True),
+    'water_intake': fields.Float(description='Water intake in liters', allow_null=True),
+    'exercise_minutes': fields.Integer(description='Exercise minutes', allow_null=True),
+    'mood': fields.String(description='Mood rating', allow_null=True),
+    'notes': fields.String(description='Additional notes', allow_null=True),
+    'breakfast': fields.String(description='Breakfast description', allow_null=True),
+    'lunch': fields.String(description='Lunch description', allow_null=True),
+    'dinner': fields.String(description='Dinner description', allow_null=True),
+    'created_at': fields.String(description='Entry creation timestamp'),
+    'updated_at': fields.String(description='Entry last update timestamp', allow_null=True)
+})
+
+# Daily entries 列表響應模型
+daily_entries_response_model = health_ns.model('DailyEntriesResponse', {
+    'entries': fields.List(fields.Nested(daily_entry_response_model), description='List of daily entries'),
+    'total_count': fields.Integer(description='Total number of entries'),
+    'limit': fields.Integer(description='Limit used for pagination')
+})
+
+# Health suggestion 響應模型
+health_suggestion_response_model = health_ns.model('HealthSuggestionResponse', {
+    'suggestion': fields.String(description='AI-generated health suggestion'),
+    'generated_at': fields.String(description='Suggestion generation timestamp'),
+    'user_id': fields.Integer(description='User ID')
+})
+
+# 統一的成功消息模型
+success_message_model = profile_ns.model('SuccessMessage', {
+    'message': fields.String(description='Success message')
+})
+
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle datetime objects"""
     def default(self, obj):
@@ -118,10 +186,25 @@ def get_request_data():
 # Authentication endpoints
 @auth_ns.route('/register')
 class Register(Resource):
-    @auth_ns.expect(auth_register_model)
-    @auth_ns.doc('register_user')
+    @auth_ns.expect(auth_register_model, validate=True)
+    @auth_ns.doc('register_user',
+                 description='Register a new user account with username, email, and password',
+                 responses={
+                     201: ('User registered successfully', auth_response_model),
+                     400: ('Bad request - invalid input data', error_model),
+                     409: ('Conflict - username or email already exists', error_model),
+                     500: ('Internal server error', error_model)
+                 })
     def post(self):
-        """Register a new user"""
+        """
+        Register a new user
+        
+        Creates a new user account with the provided credentials.
+        Username and email must be unique across the system.
+        Password must meet security requirements (minimum 8 characters).
+        
+        Returns JWT access token upon successful registration.
+        """
         try:
             data, error = get_request_data()
             if error:
@@ -151,10 +234,23 @@ class Register(Resource):
 
 @auth_ns.route('/login')
 class Login(Resource):
-    @auth_ns.expect(auth_login_model)
-    @auth_ns.doc('login_user')
+    @auth_ns.expect(auth_login_model, validate=True)
+    @auth_ns.doc('login_user',
+                 description='Authenticate user with username/email and password',
+                 responses={
+                     200: ('Login successful', auth_response_model),
+                     400: ('Bad request - missing credentials', error_model),
+                     401: ('Unauthorized - invalid credentials', error_model),
+                     500: ('Internal server error', error_model)
+                 })
     def post(self):
-        """Login user"""
+        """
+        User login
+        
+        Authenticates user with username or email and password.
+        Returns JWT access token for authenticated requests.
+        Token expires after configured time period.
+        """
         try:
             data, error = get_request_data()
             if error:
@@ -181,9 +277,22 @@ class Login(Resource):
 @profile_ns.route('/')
 class Profile(Resource):
     @jwt_required()
-    @profile_ns.doc('get_profile', security='Bearer')
+    @profile_ns.doc('get_profile',
+                    description='Retrieve current user profile information',
+                    security='Bearer',
+                    responses={
+                        200: ('Profile retrieved successfully', profile_response_model),
+                        401: ('Unauthorized - invalid or missing token', error_model),
+                        404: ('User not found', error_model),
+                        500: ('Internal server error', error_model)
+                    })
     def get(self):
-        """Get user profile"""
+        """
+        Get user profile
+        
+        Retrieves complete profile information for the authenticated user.
+        Includes personal details, health metrics, and preferences.
+        """
         try:
             user_id = get_jwt_identity()
             logger.info(f"Getting profile for user: {user_id}")
@@ -201,10 +310,28 @@ class Profile(Resource):
             return {'message': 'Internal server error'}, 500
 
     @jwt_required()
-    @profile_ns.expect(profile_model)
-    @profile_ns.doc('update_profile', security='Bearer')
+    @profile_ns.expect(profile_model, validate=True)
+    @profile_ns.doc('update_profile',
+                    description='Update user profile with new information',
+                    security='Bearer',
+                    responses={
+                        200: ('Profile updated successfully', profile_response_model),
+                        400: ('Bad request - invalid profile data', error_model),
+                        401: ('Unauthorized - invalid or missing token', error_model),
+                        422: ('Validation error - invalid field values', error_model),
+                        500: ('Internal server error', error_model)
+                    })
     def post(self):
-        """Update user profile"""
+        """
+        Update user profile
+        
+        Updates user profile information including:
+        - Personal details (age, gender, birth_date)
+        - Physical metrics (height, weight, initial measurements)
+        - Health preferences (activity_level, health_goals)
+        
+        All fields are optional - only provided fields will be updated.
+        """
         try:
             user_id = get_jwt_identity()
             data, error = get_request_data()
@@ -226,10 +353,28 @@ class Profile(Resource):
 @profile_ns.route('/delete')
 class DeleteAccount(Resource):
     @jwt_required()
-    @profile_ns.expect(delete_account_model)
-    @profile_ns.doc('delete_account', security='Bearer')
+    @profile_ns.expect(delete_account_model, validate=True)
+    @profile_ns.doc('delete_account',
+                    description='Permanently delete user account and all associated data',
+                    security='Bearer',
+                    responses={
+                        200: ('Account deleted successfully', success_message_model),
+                        400: ('Bad request - password confirmation required', error_model),
+                        401: ('Unauthorized - invalid or missing token', error_model),
+                        403: ('Forbidden - incorrect password', error_model),
+                        500: ('Internal server error', error_model)
+                    })
     def delete(self):
-        """Delete user account"""
+        """
+        Delete user account
+        
+        Permanently deletes the user account and all associated data including:
+        - User profile information
+        - All daily health entries
+        - Account preferences and settings
+        
+        This action cannot be undone. Password confirmation is required.
+        """
         try:
             user_id = get_jwt_identity()
             data, error = get_request_data()
@@ -255,10 +400,30 @@ class DeleteAccount(Resource):
 @health_ns.route('/daily-entry')
 class DailyEntry(Resource):
     @jwt_required()
-    @health_ns.expect(daily_entry_model)
-    @health_ns.doc('submit_daily_data', security='Bearer')
+    @health_ns.expect(daily_entry_model, validate=True)
+    @health_ns.doc('submit_daily_data',
+                   description='Submit daily health tracking data',
+                   security='Bearer',
+                   responses={
+                       201: ('Daily entry created successfully', daily_entry_response_model),
+                       400: ('Bad request - invalid data format', error_model),
+                       401: ('Unauthorized - invalid or missing token', error_model),
+                       409: ('Conflict - entry already exists for this date', error_model),
+                       422: ('Validation error - invalid field values', error_model),
+                       500: ('Internal server error', error_model)
+                   })
     def post(self):
-        """Submit daily health data"""
+        """
+        Submit daily health data
+        
+        Creates a new daily health entry with tracked metrics:
+        - Physical measurements (weight, height)
+        - Lifestyle data (sleep_hours, water_intake, exercise_minutes)
+        - Wellness tracking (mood, notes)
+        - Meal information (breakfast, lunch, dinner)
+        
+        Date must be in YYYY-MM-DD format. Only one entry per date is allowed.
+        """
         try:
             user_id = get_jwt_identity()
             data, error = get_request_data()
@@ -280,10 +445,33 @@ class DailyEntry(Resource):
 @health_ns.route('/daily-entries')
 class DailyEntries(Resource):
     @jwt_required()
-    @health_ns.doc('get_daily_data', security='Bearer')
-    @health_ns.param('limit', 'Number of entries to retrieve', type=int, default=30)
+    @health_ns.doc('get_daily_data',
+                   description='Retrieve user daily health entries with pagination',
+                   security='Bearer',
+                   params={
+                       'limit': {
+                           'description': 'Maximum number of entries to return (1-100)',
+                           'type': 'integer',
+                           'default': 30,
+                           'minimum': 1,
+                           'maximum': 100
+                       }
+                   },
+                   responses={
+                       200: ('Daily entries retrieved successfully', daily_entries_response_model),
+                       400: ('Bad request - invalid limit parameter', error_model),
+                       401: ('Unauthorized - invalid or missing token', error_model),
+                       500: ('Internal server error', error_model)
+                   })
     def get(self):
-        """Get user's daily data entries"""
+        """
+        Get daily health entries
+        
+        Retrieves paginated list of user's daily health entries.
+        Entries are returned in reverse chronological order (most recent first).
+        
+        Use limit parameter to control number of entries returned (max 100).
+        """
         try:
             user_id = get_jwt_identity()
             limit = int(request.args.get('limit', 30))
@@ -301,9 +489,34 @@ class DailyEntries(Resource):
 @health_ns.route('/suggestion')
 class HealthSuggestion(Resource):
     @jwt_required()
-    @health_ns.doc('get_health_suggestion', security='Bearer')
+    @health_ns.doc('get_health_suggestion',
+                   description='Generate AI-powered personalized health suggestion',
+                   security='Bearer',
+                   responses={
+                       200: ('Health suggestion generated successfully', health_suggestion_response_model),
+                       401: ('Unauthorized - invalid or missing token', error_model),
+                       404: ('User profile incomplete - cannot generate suggestion', error_model),
+                       429: ('Too many requests - rate limit exceeded', error_model),
+                       500: ('Internal server error', error_model),
+                       503: ('Service unavailable - AI service temporarily down', error_model)
+                   })
     def post(self):
-        """Get AI-powered health suggestion"""
+        """
+        Generate health suggestion
+        
+        Creates personalized AI-powered health recommendations based on:
+        - User profile information (age, gender, health goals)
+        - Recent daily health entries and trends
+        - Activity patterns and lifestyle data
+        
+        Suggestions may include recommendations for:
+        - Exercise routines and activity levels
+        - Nutrition and meal planning
+        - Sleep optimization
+        - Wellness and mental health tips
+        
+        Requires complete user profile and recent daily entries for best results.
+        """
         try:
             user_id = get_jwt_identity()
             
@@ -314,6 +527,10 @@ class HealthSuggestion(Resource):
             return serialize_response(result)
             
         except HealthTrackerException as e:
+            return {'message': e.message}, e.status_code
+        except Exception as e:
+            logger.error(f"Health suggestion error: {e}")
+            return {'message': 'Internal server error'}, 500
             return {'message': e.message}, e.status_code
         except Exception as e:
             logger.error(f"Health suggestion error: {e}")

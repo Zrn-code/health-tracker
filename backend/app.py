@@ -41,7 +41,27 @@ def create_app(config_name=None):
         app,
         version='2.0.0',
         title='Health Tracker API',
-        description='A comprehensive health tracking API with user management and daily health data tracking',
+        description='''
+        A comprehensive health tracking API with user management and daily health data tracking.
+        
+        ## Authentication
+        Most endpoints require authentication using JWT tokens. Include the token in the Authorization header:
+        ```
+        Authorization: Bearer <your-jwt-token>
+        ```
+        
+        ## API Features
+        - User registration and authentication
+        - Comprehensive user profile management
+        - Daily health data tracking
+        - AI-powered health suggestions
+        - Secure data handling with input validation
+        
+        ## Data Formats
+        - All dates should be in YYYY-MM-DD format
+        - Timestamps are returned in ISO 8601 format
+        - All requests should use Content-Type: application/json
+        ''',
         doc='/api/docs/',
         prefix='/api',
         authorizations={
@@ -49,10 +69,12 @@ def create_app(config_name=None):
                 'type': 'apiKey',
                 'in': 'header',
                 'name': 'Authorization',
-                'description': 'Add "Bearer " before your JWT token'
+                'description': 'Add "Bearer " before your JWT token. Example: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'
             }
         },
-        security='Bearer'
+        security='Bearer',
+        validate=True,
+        ordered=True
     )
     
     # Initialize logging
@@ -65,15 +87,6 @@ def create_app(config_name=None):
     
     # Error handlers
     register_error_handlers(app)
-    
-    # Health check endpoint
-    @app.route('/health')
-    def health_check():
-        return jsonify({
-            'status': 'healthy',
-            'version': '2.0.0',
-            'timestamp': '2024-01-01T00:00:00Z'
-        })
     
     return app
 
