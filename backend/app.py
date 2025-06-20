@@ -27,6 +27,7 @@ def create_app(config_name=None):
     CORS(app, 
          origins=config.CORS_ORIGINS,
          methods=config.CORS_METHODS,
+         resources={r"/*": {"origins": config.CORS_ORIGINS}},
          allow_headers=config.CORS_ALLOW_HEADERS,
          supports_credentials=config.CORS_SUPPORTS_CREDENTIALS,
          expose_headers=['Content-Type', 'Authorization'],
@@ -36,17 +37,7 @@ def create_app(config_name=None):
     
     # Initialize logging
     health_logger.init_app(app)
-    
-    # Add explicit OPTIONS handler for all routes
-    @app.before_request
-    def handle_preflight():
-        if request.method == "OPTIONS":
-            response = make_response()
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-            response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
-            return response
-    
+
     # Register blueprints with API prefix
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(profile_bp, url_prefix='/api/profile')
