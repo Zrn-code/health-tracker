@@ -157,4 +157,3 @@ class TestHealthService:
         
         with pytest.raises(ServiceUnavailableError):
             HealthService.generate_health_suggestion('user123')
-            HealthService.generate_health_suggestion('user123')

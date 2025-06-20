@@ -1,7 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import request, g
 import json
 import platform
@@ -121,7 +121,7 @@ class HealthTrackerLogger:
         """Setup request/response logging middleware"""
         @self.app.before_request
         def log_request_info():
-            g.start_time = datetime.utcnow()
+            g.start_time = datetime.now(timezone.utc)
             
             # Log basic request info
             try:
@@ -155,7 +155,7 @@ class HealthTrackerLogger:
         def log_response_info(response):
             try:
                 if hasattr(g, 'start_time'):
-                    duration = datetime.utcnow() - g.start_time
+                    duration = datetime.now(timezone.utc) - g.start_time
                     
                     # Determine log level based on status code
                     if response.status_code >= 500:

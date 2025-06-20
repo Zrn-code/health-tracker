@@ -107,7 +107,7 @@ def login():
 
 # Profile endpoints
 @profile_bp.route('/', methods=['GET', 'OPTIONS'])
-@jwt_required(optional=True)
+@jwt_required()
 def get_profile():
     """Get user profile"""
     if request.method == 'OPTIONS':
@@ -130,7 +130,7 @@ def get_profile():
         return create_response(message="Internal server error", status_code=500)
 
 @profile_bp.route('/', methods=['POST', 'OPTIONS'])
-@jwt_required(optional=True)
+@jwt_required()
 def update_profile():
     """Update user profile"""
     if request.method == 'OPTIONS':
@@ -155,7 +155,7 @@ def update_profile():
         return create_response(message="Internal server error", status_code=500)
 
 @profile_bp.route('/delete', methods=['DELETE', 'OPTIONS'])
-@jwt_required(optional=True)
+@jwt_required()
 def delete_account():
     """Delete user account"""
     if request.method == 'OPTIONS':
@@ -184,7 +184,7 @@ def delete_account():
 
 # Health endpoints
 @health_bp.route('/daily-entry', methods=['POST', 'OPTIONS'])
-@jwt_required(optional=True)
+@jwt_required()
 def submit_daily_data():
     """Submit daily health data"""
     if request.method == 'OPTIONS':
@@ -209,7 +209,7 @@ def submit_daily_data():
         return create_response(message="Internal server error", status_code=500)
 
 @health_bp.route('/daily-entries', methods=['GET', 'OPTIONS'])
-@jwt_required(optional=True)
+@jwt_required()
 def get_daily_data():
     """Get user's daily data entries"""
     if request.method == 'OPTIONS':
@@ -230,7 +230,7 @@ def get_daily_data():
         return create_response(message="Internal server error", status_code=500)
 
 @health_bp.route('/suggestion', methods=['POST', 'OPTIONS'])
-@jwt_required(optional=True)
+@jwt_required()
 def get_health_suggestion():
     """Get AI-powered health suggestion"""
     if request.method == 'OPTIONS':

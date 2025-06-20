@@ -19,7 +19,7 @@ class Config:
     ]
     CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
     CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization']
-    CORS_SUPPORTS_CREDENTIALS = False 
+    CORS_SUPPORTS_CREDENTIALS = True
     
     # Firebase settings
     FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', 'secrect/firebase')

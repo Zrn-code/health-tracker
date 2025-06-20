@@ -6,11 +6,8 @@ import time
 class TestAPIIntegration:
     """API 集成測試"""
     
-    def test_complete_user_workflow(self, api_client, server_available):
+    def test_complete_user_workflow(self, api_client):
         """測試完整的用戶工作流程"""
-        if not server_available:
-            pytest.skip("服務器不可用，跳過集成測試")
-        
         # 生成唯一用戶資料
         unique_id = f"{int(time.time())}_{str(uuid.uuid4())[:8]}"
         register_data = {
@@ -20,7 +17,7 @@ class TestAPIIntegration:
         }
         
         # 1. 註冊用戶
-        register_response = api_client.post("/api/auth/register", json=register_data)
+        register_response = api_client.post("/api/auth/register", json_data=register_data)
         
         if register_response.status_code not in [200, 201]:
             pytest.skip("無法註冊用戶，跳過集成測試")
@@ -33,7 +30,7 @@ class TestAPIIntegration:
                 "username": register_data["username"],
                 "password": register_data["password"]
             }
-            login_response = api_client.post("/api/auth/login", json=login_data)
+            login_response = api_client.post("/api/auth/login", json_data=login_data)
             assert login_response.status_code == 200
             
             access_token = login_response.json()["access_token"]
@@ -45,7 +42,7 @@ class TestAPIIntegration:
                 "initial_height": 175.0,
                 "initial_weight": 72.5
             }
-            profile_response = api_client.post("/api/profile/", json=profile_data, headers=headers)
+            profile_response = api_client.post("/api/profile/", json_data=profile_data, headers=headers)
             assert profile_response.status_code == 200
             
             # 4. 提交日常數據 - 使用更穩定的日期生成
@@ -60,7 +57,7 @@ class TestAPIIntegration:
                 "lunch": "雞胸肉沙拉",
                 "dinner": "蒸魚、蔬菜"
             }
-            daily_response = api_client.post("/api/health/daily-entry", json=daily_data, headers=headers)
+            daily_response = api_client.post("/api/health/daily-entry", json_data=daily_data, headers=headers)
             assert daily_response.status_code in [200, 201]
             
             # 5. 獲取日常數據
@@ -77,17 +74,10 @@ class TestAPIIntegration:
         except Exception as e:
             pytest.fail(f"集成測試失敗: {e}")
     
-    def test_api_error_handling(self, api_client, server_available):
+    def test_api_error_handling(self, api_client):
         """測試 API 錯誤處理"""
-        if not server_available:
-            pytest.skip("服務器不可用，跳過測試")
-        
         # 測試不存在的端點
         response = api_client.get("/api/nonexistent")
-        
-        if response.status_code == 503:
-            pytest.skip("服務器不可用")
-        
         assert response.status_code == 404
     
     @pytest.mark.slow
@@ -102,11 +92,8 @@ class TestAPIIntegration:
         response_time = end_time - start_time
         assert response_time < 5.0, f"API 響應時間過長: {response_time}秒"
     
-    def test_authentication_flow(self, api_client, server_available):
+    def test_authentication_flow(self, api_client):
         """測試認證流程"""
-        if not server_available:
-            pytest.skip("服務器不可用，跳過測試")
-        
         # 測試未認證訪問受保護端點
         protected_endpoints = [
             ("/api/profile/", "GET"),
@@ -119,9 +106,6 @@ class TestAPIIntegration:
             if method == "GET":
                 response = api_client.get(endpoint)
             else:
-                response = api_client.post(endpoint, json={})
-            
-            if response.status_code == 503:
-                pytest.skip("服務器不可用")
+                response = api_client.post(endpoint, json_data={})
             
             assert response.status_code == 401, f"端點 {endpoint} ({method}) 應該需要認證"

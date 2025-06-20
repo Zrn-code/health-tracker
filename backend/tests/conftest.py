@@ -1,18 +1,15 @@
 import pytest
-import requests
 import uuid
 import time
+import json
 from typing import Dict, Any, Optional
 
-# 測試配置
-TEST_CONFIG = {
-    "base_url": "http://localhost:8080",
-    "timeout": 10,
-    "headers": {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-}
+# Import the Flask app
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app import create_app
 
 def generate_unique_id():
     """生成唯一標識符"""
@@ -20,125 +17,120 @@ def generate_unique_id():
     unique_id = str(uuid.uuid4())[:8]
     return f"{timestamp}_{unique_id}"
 
-def check_server_availability(base_url: str = "http://localhost:8080") -> bool:
-    """檢查服務器是否可用"""
-    try:
-        response = requests.get(f"{base_url}/health", timeout=5)
-        return response.status_code == 200
-    except:
-        try:
-            # 嘗試根路徑
-            response = requests.get(base_url, timeout=5)
-            return response.status_code in [200, 404]  # 404也算服務器在運行
-        except:
-            return False
-
-class APIClient:
-    """API client for testing"""
+class FlaskTestClient:
+    """Flask test client wrapper"""
     
-    def __init__(self, base_url: str = "http://localhost:8080"):
-        self.base_url = base_url
-        self.session = requests.Session()
-        self._server_available = None
+    def __init__(self, app):
+        self.app = app
+        self.client = app.test_client()
+        self.app_context = app.app_context()
+        self.app_context.push()
     
     def is_server_available(self) -> bool:
-        """檢查服務器是否可用"""
-        if self._server_available is None:
-            self._server_available = check_server_availability(self.base_url)
-        return self._server_available
+        """Always return True for Flask test client"""
+        return True
     
-    def _make_request(self, method, endpoint, data=None, json=None, headers=None, **kwargs):
-        """發送HTTP請求的通用方法"""
-        url = f"{self.base_url}{endpoint}"
-        
-        # 設置默認請求頭
-        request_headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-        
-        # 如果有額外的請求頭，則合併
-        if headers:
-            request_headers.update(headers)
-        
-        # 從kwargs中安全地獲取headers
-        additional_headers = kwargs.pop('headers', None)
-        if additional_headers:
-            request_headers.update(additional_headers)
-        
-        try:
-            response = self.session.request(
-                method=method,
-                url=url,
-                data=data,
-                json=json,
-                headers=request_headers,
-                timeout=30,
-                **kwargs
-            )
-            return response
-        except requests.exceptions.ConnectionError:
-            # 連接錯誤 - 服務器可能未運行
-            class MockResponse:
-                def __init__(self):
-                    self.status_code = 503
-                    self.text = "Service Unavailable - Server not running"
-                
-                def json(self):
-                    return {"message": "Service Unavailable - Server not running"}
+    def _process_response(self, response):
+        """Process Flask test response to match requests response format"""
+        class MockResponse:
+            def __init__(self, flask_response):
+                self.status_code = flask_response.status_code
+                self.text = flask_response.get_data(as_text=True)
+                self._json_data = None
+                self._flask_response = flask_response
             
-            return MockResponse()
-        except requests.exceptions.Timeout:
-            # 超時錯誤
-            class MockResponse:
-                def __init__(self):
-                    self.status_code = 408
-                    self.text = "Request Timeout"
-                
-                def json(self):
-                    return {"message": "Request Timeout"}
-            
-            return MockResponse()
-        except requests.exceptions.RequestException as e:
-            # 其他請求錯誤
-            class MockResponse:
-                def __init__(self):
-                    self.status_code = 500
-                    self.text = f"Request Error: {str(e)}"
-                
-                def json(self):
-                    return {"message": f"Request Error: {str(e)}"}
-            
-            return MockResponse()
+            def json(self):
+                if self._json_data is None:
+                    try:
+                        self._json_data = json.loads(self.text)
+                    except (json.JSONDecodeError, ValueError):
+                        self._json_data = {}
+                return self._json_data
+        
+        return MockResponse(response)
     
     def get(self, endpoint, headers=None, **kwargs):
-        return self._make_request('GET', endpoint, headers=headers, **kwargs)
+        """GET request"""
+        response = self.client.get(endpoint, headers=headers, **kwargs)
+        return self._process_response(response)
     
-    def post(self, endpoint, data=None, json=None, headers=None, **kwargs):
-        return self._make_request('POST', endpoint, data=data, json=json, headers=headers, **kwargs)
+    def post(self, endpoint, data=None, json_data=None, headers=None, **kwargs):
+        """POST request"""
+        if json_data is not None:
+            data = json.dumps(json_data)
+            if headers is None:
+                headers = {}
+            headers['Content-Type'] = 'application/json'
+        
+        response = self.client.post(
+            endpoint, 
+            data=data,
+            headers=headers,
+            **kwargs
+        )
+        return self._process_response(response)
     
-    def put(self, endpoint, data=None, json=None, headers=None, **kwargs):
-        return self._make_request('PUT', endpoint, data=data, json=json, headers=headers, **kwargs)
+    def put(self, endpoint, data=None, json_data=None, headers=None, **kwargs):
+        """PUT request"""
+        if json_data is not None:
+            data = json.dumps(json_data)
+            if headers is None:
+                headers = {}
+            headers['Content-Type'] = 'application/json'
+        
+        response = self.client.put(
+            endpoint,
+            data=data,
+            headers=headers,
+            **kwargs
+        )
+        return self._process_response(response)
     
-    def delete(self, endpoint, data=None, json=None, headers=None, **kwargs):
-        return self._make_request('DELETE', endpoint, data=data, json=json, headers=headers, **kwargs)
+    def delete(self, endpoint, data=None, json_data=None, headers=None, **kwargs):
+        """DELETE request"""
+        if json_data is not None:
+            data = json.dumps(json_data)
+            if headers is None:
+                headers = {}
+            headers['Content-Type'] = 'application/json'
+        
+        response = self.client.delete(
+            endpoint,
+            data=data,
+            headers=headers,
+            **kwargs
+        )
+        return self._process_response(response)
+    
+    def cleanup(self):
+        """Clean up app context"""
+        self.app_context.pop()
 
 @pytest.fixture
-def api_client():
-    """提供 API 客戶端"""
-    return APIClient()
+def app():
+    """Create Flask app for testing"""
+    app = create_app('testing')  # Use testing configuration
+    app.config['TESTING'] = True
+    app.config['WTF_CSRF_ENABLED'] = False
+    return app
 
 @pytest.fixture
-def server_available(api_client):
-    """檢查服務器是否可用的 fixture"""
-    return api_client.is_server_available()
+def api_client(app):
+    """提供 Flask test client"""
+    client = FlaskTestClient(app)
+    yield client
+    client.cleanup()
+
+@pytest.fixture
+def server_available():
+    """Always return True for Flask test client"""
+    return True
 
 @pytest.fixture(scope="function")
 def unique_user_data():
     """生成唯一的測試用戶數據"""
     unique_id = generate_unique_id()
     timestamp = str(int(time.time()))
-    # 確保 email 和 username 不同
     return {
         "email": f"email_{unique_id}@example.com",
         "username": f"user_{timestamp}_{unique_id[:8]}",
@@ -154,6 +146,14 @@ def unique_profile_data():
         "initial_weight": 70.0
     }
 
+def get_unique_user_data():
+    """Get unique user data for testing"""
+    unique_id = generate_unique_id()
+    return {
+        "email": f"test_{unique_id}@example.com",
+        "username": f"testuser_{unique_id}",
+        "password": "testpassword123"
+    }
 # Export unique_user_data function for direct import
 def get_unique_user_data():
     """Get unique user data for testing"""
