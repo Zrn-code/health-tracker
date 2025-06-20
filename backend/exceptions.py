@@ -69,4 +69,3 @@ def handle_exception(e: Exception) -> Dict[str, Any]:
     # Log unexpected errors
     logger.error(f"Unexpected error: {str(e)}", exc_info=True)
     return {'error': 'Internal server error'}, 500
-    return {'error': 'Internal server error'}, 500

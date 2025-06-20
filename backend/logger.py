@@ -125,8 +125,15 @@ class HealthTrackerLogger:
             
             # Log basic request info
             try:
+                client_domain = request.headers.get('Host', 'Unknown')  # Get the domain from the Host header
+                cors_origin = request.headers.get('Origin', 'Unknown')  # Get the CORS origin
+                cors_method = request.headers.get('Access-Control-Request-Method', 'None')  # Get the CORS method
+                
                 self.logger.info(
                     f'Request: {request.method} {request.url} - '
+                    f'Client Domain: {client_domain} - '
+                    f'CORS Origin: {cors_origin} - '  # Log the CORS origin
+                    f'CORS Method: {cors_method} - '  # Log the CORS method
                     f'IP: {request.remote_addr} - '
                     f'User-Agent: {request.headers.get("User-Agent", "Unknown")}'
                 )

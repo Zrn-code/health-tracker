@@ -25,7 +25,12 @@ def create_app(config_name=None):
     
     # Initialize CORS with more explicit configuration
     
-    CORS(app,origins=['*'])
+    CORS(app,resources=
+        {r"*": {"origins": '*'}},
+        supports_credentials=True,
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+        expose_headers=["Content-Type", "Authorization"]
+    )
     
     jwt = JWTManager(app)
     
@@ -36,11 +41,6 @@ def create_app(config_name=None):
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(profile_bp, url_prefix='/api/profile')
     app.register_blueprint(health_bp, url_prefix='/api/health')
-    
-    CORS(auth_bp)
-    CORS(profile_bp)
-    CORS(health_bp)
-    
     
     # Error handlers
     register_error_handlers(app)
