@@ -1,7 +1,7 @@
 import pytest
 import uuid
 import time
-import json
+import json as json_module
 from typing import Dict, Any, Optional
 
 # Import the Flask app
@@ -42,8 +42,8 @@ class FlaskTestClient:
             def json(self):
                 if self._json_data is None:
                     try:
-                        self._json_data = json.loads(self.text)
-                    except (json.JSONDecodeError, ValueError):
+                        self._json_data = json_module.loads(self.text)
+                    except (json_module.JSONDecodeError, ValueError):
                         self._json_data = {}
                 return self._json_data
         
@@ -54,10 +54,19 @@ class FlaskTestClient:
         response = self.client.get(endpoint, headers=headers, **kwargs)
         return self._process_response(response)
     
-    def post(self, endpoint, data=None, json_data=None, headers=None, **kwargs):
+    def post(self, endpoint, data=None, json=None, json_data=None, headers=None, **kwargs):
         """POST request"""
-        if json_data is not None:
-            data = json.dumps(json_data)
+        # Support both 'json' and 'json_data' parameters for backward compatibility
+        request_json = json or json_data
+        
+        if request_json is not None:
+            data = json_module.dumps(request_json)
+            if headers is None:
+                headers = {}
+            headers['Content-Type'] = 'application/json'
+        elif json is not None or json_data is not None:
+            # Handle explicit empty dict
+            data = json_module.dumps({})
             if headers is None:
                 headers = {}
             headers['Content-Type'] = 'application/json'
@@ -70,10 +79,12 @@ class FlaskTestClient:
         )
         return self._process_response(response)
     
-    def put(self, endpoint, data=None, json_data=None, headers=None, **kwargs):
+    def put(self, endpoint, data=None, json=None, json_data=None, headers=None, **kwargs):
         """PUT request"""
-        if json_data is not None:
-            data = json.dumps(json_data)
+        request_json = json or json_data
+        
+        if request_json is not None:
+            data = json_module.dumps(request_json)
             if headers is None:
                 headers = {}
             headers['Content-Type'] = 'application/json'
@@ -86,10 +97,20 @@ class FlaskTestClient:
         )
         return self._process_response(response)
     
-    def delete(self, endpoint, data=None, json_data=None, headers=None, **kwargs):
+    def delete(self, endpoint, data=None, json=None, json_data=None, headers=None, **kwargs):
         """DELETE request"""
-        if json_data is not None:
-            data = json.dumps(json_data)
+        request_json = json or json_data
+        
+        # Always set JSON content type and data if we have request_json (even if empty)
+        if request_json is not None:
+            data = json_module.dumps(request_json)
+            if headers is None:
+                headers = {}
+            headers['Content-Type'] = 'application/json'
+        # If no JSON data specified but we want to send empty JSON, check for explicit empty dict
+        elif json is not None or json_data is not None:
+            # This handles the case where json={} is explicitly passed
+            data = json_module.dumps({})
             if headers is None:
                 headers = {}
             headers['Content-Type'] = 'application/json'

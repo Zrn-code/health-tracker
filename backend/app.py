@@ -1,13 +1,14 @@
 from flask import Flask, jsonify, request, make_response
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_restx import Api
 import logging
 import os
 
 from config import get_config
 from exceptions import HealthTrackerException, handle_exception
 from logger import health_logger
-from api import auth_bp, profile_bp, health_bp
+from api import auth_ns, profile_ns, health_ns
 
 def create_app(config_name=None):
     """Application factory pattern"""
@@ -35,13 +36,32 @@ def create_app(config_name=None):
     
     jwt = JWTManager(app)
     
+    # Initialize Flask-RESTX
+    api = Api(
+        app,
+        version='2.0.0',
+        title='Health Tracker API',
+        description='A comprehensive health tracking API with user management and daily health data tracking',
+        doc='/api/docs/',
+        prefix='/api',
+        authorizations={
+            'Bearer': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'Authorization',
+                'description': 'Add "Bearer " before your JWT token'
+            }
+        },
+        security='Bearer'
+    )
+    
     # Initialize logging
     health_logger.init_app(app)
 
-    # Register blueprints with API prefix
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(profile_bp, url_prefix='/api/profile')
-    app.register_blueprint(health_bp, url_prefix='/api/health')
+    # Register namespaces
+    api.add_namespace(auth_ns, path='/auth')
+    api.add_namespace(profile_ns, path='/profile')
+    api.add_namespace(health_ns, path='/health')
     
     # Error handlers
     register_error_handlers(app)

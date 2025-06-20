@@ -174,7 +174,7 @@ class TestUsersAPI:
                 headers = {"Authorization": f"Bearer {access_token}"}
 
                 # 嘗試刪除帳號但不提供密碼 - 發送空的 JSON 對象
-                delete_response = api_client.delete("/api/profile/delete", json_data={}, headers=headers)
+                delete_response = api_client.delete("/api/profile/delete", json={}, headers=headers)
                 
                 assert delete_response.status_code == 400
                 data = delete_response.json()
@@ -275,7 +275,7 @@ class TestUsersAPI:
         headers = {"Authorization": "Bearer invalid_token_12345"}
         delete_data = {"password": "testpassword123"}
         
-        delete_response = api_client.delete("/api/profile/delete", json_data=delete_data, headers=headers)
+        delete_response = api_client.delete("/api/profile/delete", json=delete_data, headers=headers)
         
         assert delete_response.status_code == 422
         data = delete_response.json()
@@ -288,7 +288,7 @@ class TestUsersAPI:
         headers = {"Authorization": f"Bearer {expired_token}"}
         delete_data = {"password": "testpassword123"}
         
-        delete_response = api_client.delete("/api/profile/delete", json_data=delete_data, headers=headers)
+        delete_response = api_client.delete("/api/profile/delete", json=delete_data, headers=headers)
         
         assert delete_response.status_code == 422  # JWT 驗證失敗
 
@@ -296,12 +296,12 @@ class TestUsersAPI:
         """測試刪除帳號 - 完整的認證流程測試"""
         # 1. 先測試沒有 token 的情況
         delete_data = {"password": "testpassword123"}
-        delete_response = api_client.delete("/api/profile/delete", json_data=delete_data)
+        delete_response = api_client.delete("/api/profile/delete", json=delete_data)
         
         assert delete_response.status_code == 401
         
         # 2. 註冊用戶
-        register_response = api_client.post("/api/auth/register", json_data=unique_user_data)
+        register_response = api_client.post("/api/auth/register", json=unique_user_data)
         
         if register_response.status_code in [200, 201]:
             # 3. 登入獲取有效 token
@@ -309,40 +309,41 @@ class TestUsersAPI:
                 "username": unique_user_data["username"],
                 "password": unique_user_data["password"]
             }
-            login_response = api_client.post("/api/auth/login", json_data=login_data)
+            login_response = api_client.post("/api/auth/login", json=login_data)
             
             if login_response.status_code == 200:
                 access_token = login_response.json()["access_token"]
                 headers = {"Authorization": f"Bearer {access_token}"}
                 
                 # 4. 測試有 token 但沒有密碼
-                delete_response = api_client.delete("/api/profile/delete", json_data={}, headers=headers)
+                delete_response = api_client.delete("/api/profile/delete", json={}, headers=headers)
                 assert delete_response.status_code == 400
                 data = delete_response.json()
                 assert "Password confirmation required" in data.get("message", "")
                 
                 # 5. 測試有 token 但密碼錯誤
                 wrong_password_data = {"password": "wrongpassword123"}
-                delete_response = api_client.delete("/api/profile/delete", json_data=wrong_password_data, headers=headers)
+                delete_response = api_client.delete("/api/profile/delete", json=wrong_password_data, headers=headers)
                 assert delete_response.status_code == 401
                 data = delete_response.json()
                 assert "Invalid password" in data.get("message", "")
                 
                 # 6. 測試正確的 token 和密碼（實際刪除）
                 correct_password_data = {"password": unique_user_data["password"]}
-                delete_response = api_client.delete("/api/profile/delete", json_data=correct_password_data, headers=headers)
+                delete_response = api_client.delete("/api/profile/delete", json=correct_password_data, headers=headers)
                 assert delete_response.status_code == 200
                 data = delete_response.json()
                 assert "Account and all associated data deleted successfully" in data.get("message", "")
                 
                 # 7. 驗證帳號已被刪除 - 嘗試再次登入應該失敗
-                login_again = api_client.post("/api/auth/login", json_data=login_data)
+                login_again = api_client.post("/api/auth/login", json=login_data)
                 assert login_again.status_code == 401
 
     def test_delete_account_without_token(self, api_client):
         """測試未授權刪除帳號"""
+
         delete_data = {"password": "testpassword123"}
-        response = api_client.delete("/api/profile/delete", json_data=delete_data)
+        response = api_client.delete("/api/profile/delete", json=delete_data)
         
         assert response.status_code == 401
     
@@ -354,7 +355,7 @@ class TestUsersAPI:
                 "username": user_data["username"],
                 "password": user_data["password"]
             }
-            login_response = api_client.post("/api/auth/login", json_data=login_data)
+            login_response = api_client.post("/api/auth/login", json=login_data)
             
             if login_response.status_code == 200:
                 access_token = login_response.json()["access_token"]
@@ -362,7 +363,7 @@ class TestUsersAPI:
                 
                 # 刪除帳號
                 delete_data = {"password": user_data["password"]}
-                api_client.delete("/api/profile/delete", json_data=delete_data, headers=headers)
+                api_client.delete("/api/profile/delete", json=delete_data, headers=headers)
         except:
             # 如果清理失敗，忽略錯誤
             pass

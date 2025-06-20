@@ -18,7 +18,7 @@ class TestDailyDataAPI:
         }
         
         # 註冊用戶
-        register_response = api_client.post("/api/auth/register", json_data=unique_user_data)
+        register_response = api_client.post("/api/auth/register", json=unique_user_data)
         
         if register_response.status_code not in [200, 201]:
             return None
@@ -28,7 +28,7 @@ class TestDailyDataAPI:
             "username": unique_user_data["username"],
             "password": unique_user_data["password"]
         }
-        login_response = api_client.post("/api/auth/login", json_data=login_data)
+        login_response = api_client.post("/api/auth/login", json=login_data)
         
         if login_response.status_code != 200:
             return None
@@ -84,7 +84,7 @@ class TestDailyDataAPI:
         }
         
         headers = {"Authorization": f"Bearer {auth_result['token']}"}
-        response = api_client.post("/api/health/daily-entry", json_data=daily_data, headers=headers)
+        response = api_client.post("/api/health/daily-entry", json=daily_data, headers=headers)
         
         assert response.status_code in [200, 201]
         data = response.json()

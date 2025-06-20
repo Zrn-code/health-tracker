@@ -17,7 +17,7 @@ class TestAPIIntegration:
         }
         
         # 1. 註冊用戶
-        register_response = api_client.post("/api/auth/register", json_data=register_data)
+        register_response = api_client.post("/api/auth/register", json=register_data)
         
         if register_response.status_code not in [200, 201]:
             pytest.skip("無法註冊用戶，跳過集成測試")
@@ -30,7 +30,7 @@ class TestAPIIntegration:
                 "username": register_data["username"],
                 "password": register_data["password"]
             }
-            login_response = api_client.post("/api/auth/login", json_data=login_data)
+            login_response = api_client.post("/api/auth/login", json=login_data)
             assert login_response.status_code == 200
             
             access_token = login_response.json()["access_token"]
@@ -42,7 +42,7 @@ class TestAPIIntegration:
                 "initial_height": 175.0,
                 "initial_weight": 72.5
             }
-            profile_response = api_client.post("/api/profile/", json_data=profile_data, headers=headers)
+            profile_response = api_client.post("/api/profile/", json=profile_data, headers=headers)
             assert profile_response.status_code == 200
             
             # 4. 提交日常數據 - 使用更穩定的日期生成
@@ -57,7 +57,7 @@ class TestAPIIntegration:
                 "lunch": "雞胸肉沙拉",
                 "dinner": "蒸魚、蔬菜"
             }
-            daily_response = api_client.post("/api/health/daily-entry", json_data=daily_data, headers=headers)
+            daily_response = api_client.post("/api/health/daily-entry", json=daily_data, headers=headers)
             assert daily_response.status_code in [200, 201]
             
             # 5. 獲取日常數據
@@ -106,6 +106,6 @@ class TestAPIIntegration:
             if method == "GET":
                 response = api_client.get(endpoint)
             else:
-                response = api_client.post(endpoint, json_data={})
+                response = api_client.post(endpoint, json={})
             
             assert response.status_code == 401, f"端點 {endpoint} ({method}) 應該需要認證"
