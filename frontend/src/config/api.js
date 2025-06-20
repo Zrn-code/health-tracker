@@ -1,7 +1,9 @@
 // API Configuration
 const API_CONFIG = {
   // Use environment variable or fallback to relative path for production
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || "/api",
+  BASE_URL:
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://health-tracker-340210095480.asia-east1.run.app",
   TIMEOUT: 10000, // 10 seconds timeout
   RETRY_ATTEMPTS: 3,
 };
@@ -11,7 +13,12 @@ export const buildApiUrl = (endpoint) => {
   // Remove leading slash if present to avoid double slashes
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
 
-  // In production, if no base URL is set, use relative path
+  // In development, use the full URL to the deployed backend
+  if (import.meta.env.DEV) {
+    return `${API_CONFIG.BASE_URL}/api/${cleanEndpoint}`;
+  }
+
+  // In production, use relative path if BASE_URL is not set
   if (!API_CONFIG.BASE_URL || API_CONFIG.BASE_URL === "/api") {
     return `/api/${cleanEndpoint}`;
   }
@@ -39,6 +46,8 @@ export const apiRequest = async (endpoint, options = {}) => {
       ...options.headers,
     },
     timeout: API_CONFIG.TIMEOUT,
+    mode: "cors", // Explicitly set CORS mode
+    credentials: "omit", // Don't send credentials for cross-origin requests
   };
 
   const config = { ...defaultOptions, ...options };

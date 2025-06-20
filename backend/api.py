@@ -44,9 +44,12 @@ def get_request_data():
         return None, f"Failed to parse JSON: {str(e)}"
 
 # Authentication endpoints
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     """User registration endpoint"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         data, error = get_request_data()
         if error:
@@ -74,9 +77,12 @@ def register():
         logger.error(f"Registration error: {e}")
         return create_response(message="Internal server error", status_code=500)
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST', 'OPTIONS'])
 def login():
     """User login endpoint"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         data, error = get_request_data()
         if error:
@@ -100,10 +106,13 @@ def login():
         return create_response(message="Internal server error", status_code=500)
 
 # Profile endpoints
-@profile_bp.route('/', methods=['GET'])
-@jwt_required()
+@profile_bp.route('/', methods=['GET', 'OPTIONS'])
+@jwt_required(optional=True)
 def get_profile():
     """Get user profile"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         user_id = get_jwt_identity()
         logger.info(f"Getting profile for user: {user_id}")
@@ -120,10 +129,13 @@ def get_profile():
         logger.error(f"Get profile error: {e}", exc_info=True)
         return create_response(message="Internal server error", status_code=500)
 
-@profile_bp.route('/', methods=['POST'])
-@jwt_required()
+@profile_bp.route('/', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def update_profile():
     """Update user profile"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         user_id = get_jwt_identity()
         data, error = get_request_data()
@@ -142,10 +154,13 @@ def update_profile():
         logger.error(f"Update profile error: {e}")
         return create_response(message="Internal server error", status_code=500)
 
-@profile_bp.route('/delete', methods=['DELETE'])
-@jwt_required()
+@profile_bp.route('/delete', methods=['DELETE', 'OPTIONS'])
+@jwt_required(optional=True)
 def delete_account():
     """Delete user account"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         user_id = get_jwt_identity()
         data, error = get_request_data()
@@ -168,10 +183,13 @@ def delete_account():
         return create_response(message="Internal server error", status_code=500)
 
 # Health endpoints
-@health_bp.route('/daily-entry', methods=['POST'])
-@jwt_required()
+@health_bp.route('/daily-entry', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def submit_daily_data():
     """Submit daily health data"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         user_id = get_jwt_identity()
         data, error = get_request_data()
@@ -190,10 +208,13 @@ def submit_daily_data():
         logger.error(f"Submit daily data error: {e}")
         return create_response(message="Internal server error", status_code=500)
 
-@health_bp.route('/daily-entries', methods=['GET'])
-@jwt_required()
+@health_bp.route('/daily-entries', methods=['GET', 'OPTIONS'])
+@jwt_required(optional=True)
 def get_daily_data():
     """Get user's daily data entries"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         user_id = get_jwt_identity()
         limit = int(request.args.get('limit', 30))
@@ -208,10 +229,13 @@ def get_daily_data():
         logger.error(f"Get daily data error: {e}")
         return create_response(message="Internal server error", status_code=500)
 
-@health_bp.route('/suggestion', methods=['POST'])
-@jwt_required()
+@health_bp.route('/suggestion', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def get_health_suggestion():
     """Get AI-powered health suggestion"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         user_id = get_jwt_identity()
         
