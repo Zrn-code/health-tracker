@@ -1,17 +1,21 @@
-FROM python:3.11-slim
+# 使用官方 Python 基礎映像
+FROM python:3.10-slim
 
+# 設定工作目錄
 WORKDIR /app
 
-COPY requirements.txt .
+# 複製需求檔與應用程式
+COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 COPY . .
 
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
+# 設定環境變數
 ENV PORT=8080
+
+# 開放 port
 EXPOSE 8080
 
-# ✅ 使用 Gunicorn 來穩定監聽 Cloud Run 的 $PORT
-CMD ["gunicorn", "-b", ":8080", "app:app"]
+# 執行應用程式
+CMD ["python", "app.py"]
+
