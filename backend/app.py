@@ -24,7 +24,15 @@ def create_app(config_name=None):
             print(f"Configuration error: {error}")
     
     # Initialize CORS with more explicit configuration
-    CORS(app)  # Cache preflight for 24 hours
+    
+    CORS(app, 
+         origins=config.CORS_ORIGINS,     
+         methods=config.CORS_METHODS,
+         resources={r"/*": {"origins": config.CORS_ORIGINS}},
+         allow_headers=config.CORS_ALLOW_HEADERS,
+         supports_credentials=config.CORS_SUPPORTS_CREDENTIALS,
+         expose_headers=['Content-Type', 'Authorization'],
+         max_age=86400)  # Cache preflight for 24 hours
     
     jwt = JWTManager(app)
     
@@ -35,6 +43,11 @@ def create_app(config_name=None):
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(profile_bp, url_prefix='/api/profile')
     app.register_blueprint(health_bp, url_prefix='/api/health')
+    
+    CORS(auth_bp)
+    CORS(profile_bp)
+    CORS(health_bp)
+    
     
     # Error handlers
     register_error_handlers(app)
@@ -47,14 +60,6 @@ def create_app(config_name=None):
             'version': '2.0.0',
             'timestamp': '2024-01-01T00:00:00Z'
         })
-    
-    # Add CORS headers to all responses
-    @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        return response
     
     return app
 
