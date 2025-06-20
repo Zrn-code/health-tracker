@@ -24,6 +24,7 @@ def create_app(config_name=None):
             print(f"Configuration error: {error}")
     
     # Initialize CORS with more explicit configuration
+    '''
     CORS(app, 
          origins=config.CORS_ORIGINS,
          methods=config.CORS_METHODS,
@@ -32,6 +33,7 @@ def create_app(config_name=None):
          supports_credentials=config.CORS_SUPPORTS_CREDENTIALS,
          expose_headers=['Content-Type', 'Authorization'],
          max_age=86400)  # Cache preflight for 24 hours
+    '''
     
     jwt = JWTManager(app)
     
