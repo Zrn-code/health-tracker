@@ -531,7 +531,6 @@ class HealthSuggestion(Resource):
         except Exception as e:
             logger.error(f"Health suggestion error: {e}")
             return {'message': 'Internal server error'}, 500
-            return {'message': e.message}, e.status_code
         except Exception as e:
             logger.error(f"Health suggestion error: {e}")
             return {'message': 'Internal server error'}, 500

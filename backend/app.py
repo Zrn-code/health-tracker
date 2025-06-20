@@ -26,7 +26,7 @@ def create_app(config_name=None):
     
     # Initialize CORS with more explicit configuration
     CORS(app,resources=
-        {r"/*": {"origins": config.CORS_ORIGINS}},
+        {r"/api/*": {"origins": config.CORS_ORIGINS},r"/api/docs":{"origins": "*"}},
         supports_credentials=config.CORS_SUPPORTS_CREDENTIALS,
         methods=config.CORS_METHODS,
         max_age=3600,
