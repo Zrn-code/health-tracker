@@ -26,7 +26,7 @@ def create_app(config_name=None):
     # Initialize CORS with more explicit configuration
     
     CORS(app,resources=
-        {r"*": {"origins": '*'}},
+        {r"/*": {"origins": '*'}},
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
         expose_headers=["Content-Type", "Authorization"]
