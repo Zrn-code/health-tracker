@@ -6,7 +6,7 @@ class Config:
     """Application configuration"""
     
     # Security
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'xxx')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
     
     
@@ -18,7 +18,8 @@ class Config:
         'https://interview-c8310.firebaseapp.com'
     ]
     CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-    CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization']
+    CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', "X-Requested-With"]
+    CORS_EXPOSE_HEADERS = ['Content-Type', 'Authorization']
     CORS_SUPPORTS_CREDENTIALS = True
     
     # Firebase settings

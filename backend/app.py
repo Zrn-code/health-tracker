@@ -24,14 +24,13 @@ def create_app(config_name=None):
             print(f"Configuration error: {error}")
     
     # Initialize CORS with more explicit configuration
-    
     CORS(app,resources=
-        {r"/*": {"origins": '*'}},
-        supports_credentials=True,
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        {r"/*": {"origins": config.CORS_ORIGINS}},
+        supports_credentials=config.CORS_SUPPORTS_CREDENTIALS,
+        methods=config.CORS_METHODS,
         max_age=3600,
-        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-        expose_headers=["Content-Type", "Authorization"]
+        allow_headers=config.CORS_ALLOW_HEADERS,
+        expose_headers=config.CORS_EXPOSE_HEADERS
     )
     
     jwt = JWTManager(app)
