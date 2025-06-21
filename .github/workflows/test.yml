@@ -37,6 +37,11 @@ jobs:
         run: |
           echo "FIREBASE_CREDENTIALS_PATH=backend/secret/firebase" >> $GITHUB_ENV
 
+      - name: Verify Firebase credentials file
+        run: |
+          ls -l backend/secret
+          cat backend/secret/firebase
+
       - name: Run tests with coverage
         working-directory: ./backend
         run: |
