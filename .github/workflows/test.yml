@@ -39,11 +39,6 @@ jobs:
           name: "backend/secret/firebase"
           json: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
 
-      - name: Validate Firebase credentials file
-        run: |
-          cat backend/secret/firebase
-          python -m json.tool < backend/secret/firebase
-
       - name: Run tests with coverage
         working-directory: ./backend
         run: |
@@ -55,6 +50,10 @@ jobs:
           file: ./coverage.xml
           flags: unittests
           name: codecov-umbrella
+
+      - name: Verify HTML coverage report
+        run: |
+          ls -l htmlcov
 
       - name: Upload coverage HTML report
         uses: actions/upload-artifact@v4
