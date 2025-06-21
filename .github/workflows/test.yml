@@ -33,6 +33,10 @@ jobs:
           mkdir -p backend/secret
           echo "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > backend/secret/firebase
 
+      - name: Set environment variables
+        run: |
+          echo "FIREBASE_CREDENTIALS_PATH=backend/secret/firebase" >> $GITHUB_ENV
+
       - name: Run tests with coverage
         working-directory: ./backend
         run: |
