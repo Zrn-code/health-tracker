@@ -33,11 +33,6 @@ jobs:
           mkdir -p backend/secret
           echo "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > backend/secret/firebase
 
-      - name: Verify Firebase credentials file
-        run: |
-          ls -l backend/secret
-          cat backend/secret/firebase
-
       - name: Run tests with coverage
         working-directory: ./backend
         run: |
