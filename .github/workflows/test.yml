@@ -28,10 +28,16 @@ jobs:
           if [ -f backend/requirements-dev.txt ]; then pip install -r backend/requirements.txt; fi
           if [ -f backend/requirements-dev.txt ]; then pip install -r backend/requirements-dev.txt; fi
 
-      - name: Write Firebase secret to file
+      - name: Create Directories
         run: |
           mkdir -p backend/secret
-          printf '%s' "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > backend/secret/firebase
+
+      - name: Create Secret Firebase Credentials File
+        id: create-json
+        uses: jsdaniell/create-json@1.1.2
+        with:
+          name: "backend/secret/firebase"
+          json: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
 
       - name: Validate Firebase credentials file
         run: |
