@@ -16,4 +16,8 @@ google-genai
 python-dotenv==1.0.0
 gunicorn==21.2.0
 
-gunicorn
+
+# Coverage and Testing
+coverage==7.2.0
+pytest==7.4.0
+pytest-cov==4.0.0
