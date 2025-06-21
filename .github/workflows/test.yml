@@ -39,6 +39,10 @@ jobs:
           name: "backend/secret/firebase"
           json: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
 
+      - name: Create HTML coverage directory
+        run: |
+          mkdir -p backend/htmlcov
+
       - name: Run tests with coverage
         working-directory: ./backend
         run: |
@@ -53,13 +57,13 @@ jobs:
 
       - name: Verify HTML coverage report
         run: |
-          ls -l htmlcov
+          ls -l backend/htmlcov
 
       - name: Upload coverage HTML report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-${{ matrix.python-version }}
-          path: htmlcov/
+          path: backend/htmlcov/
           retention-days: 30
 
       - name: Coverage comment
