@@ -33,6 +33,11 @@ jobs:
           mkdir -p backend/secret
           printf "%s" "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > backend/secret/firebase
 
+      - name: Validate Firebase credentials file
+        run: |
+          cat backend/secret/firebase
+          python -m json.tool < backend/secret/firebase
+
       - name: Run tests with coverage
         working-directory: ./backend
         run: |
