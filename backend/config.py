@@ -48,9 +48,6 @@ class Config:
         if not os.path.exists(cls.FIREBASE_CREDENTIALS_PATH):
             errors.append(f"Firebase credentials file not found: {cls.FIREBASE_CREDENTIALS_PATH}")
         
-        if not cls.GEMINI_API_KEY:
-            errors.append("GEMINI_API_KEY environment variable not set")
-        
         return errors
 
 class DevelopmentConfig(Config):

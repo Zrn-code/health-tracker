@@ -124,32 +124,26 @@ class HealthTrackerLogger:
             g.start_time = datetime.now(timezone.utc)
             
             # Log basic request info
-            try:
-                client_domain = request.headers.get('Host', 'Unknown')  # Get the domain from the Host header
-                cors_origin = request.headers.get('Origin', 'Unknown')  # Get the CORS origin
-                cors_method = request.headers.get('Access-Control-Request-Method', 'None')  # Get the CORS method
-                
-                self.logger.info(
-                    f'Request: {request.method} {request.url} - '
-                    f'Client Domain: {client_domain} - '
-                    f'CORS Origin: {cors_origin} - '  # Log the CORS origin
-                    f'CORS Method: {cors_method} - '  # Log the CORS method
-                    f'IP: {request.remote_addr} - '
-                    f'User-Agent: {request.headers.get("User-Agent", "Unknown")}'
-                )
-                
-                # Log request data for POST/PUT requests (excluding sensitive data)
-                if request.method in ['POST', 'PUT'] and request.is_json:
-                    try:
-                        data = request.get_json()
-                        safe_data = self._sanitize_request_data(data)
-                        if safe_data:
-                            self.logger.debug(f'Request data: {json.dumps(safe_data, default=str)}')
-                    except Exception as e:
-                        self.logger.warning(f'Failed to log request data: {e}')
-            except Exception as e:
-                # Don't let logging errors break the request
-                pass
+            client_domain = request.headers.get('Host', 'Unknown')  # Get the domain from the Host header
+            cors_origin = request.headers.get('Origin', 'Unknown')  # Get the CORS origin
+            cors_method = request.headers.get('Access-Control-Request-Method', 'None')  # Get the CORS method
+            
+            self.logger.info(
+                f'Request: {request.method} {request.url} - '
+                f'Client Domain: {client_domain} - '
+                f'CORS Origin: {cors_origin} - '  # Log the CORS origin
+                f'CORS Method: {cors_method} - '  # Log the CORS method
+                f'IP: {request.remote_addr} - '
+                f'User-Agent: {request.headers.get("User-Agent", "Unknown")}'
+            )
+            
+            # Log request data for POST/PUT requests (excluding sensitive data)
+            if request.method in ['POST', 'PUT'] and request.is_json:
+                data = request.get_json()
+                safe_data = self._sanitize_request_data(data)
+                if safe_data:
+                    self.logger.debug(f'Request data: {json.dumps(safe_data, default=str)}')
+
         
         @self.app.after_request
         def log_response_info(response):
@@ -180,14 +174,11 @@ class HealthTrackerLogger:
     def setup_jwt_logging(self):
         """Setup JWT-specific logging"""
         def log_jwt_event(event_type, message):
-            try:
-                self.security_logger.warning(
-                    f'JWT {event_type}: {message} - IP: {request.remote_addr} - '
-                    f'Time: {datetime.utcnow().isoformat()}'
-                )
-            except Exception:
-                # Don't let logging errors break the application
-                pass
+            self.security_logger.warning(
+                f'JWT {event_type}: {message} - IP: {request.remote_addr} - '
+                f'Time: {datetime.utcnow().isoformat()}'
+            )
+
         
         # Store reference for use in JWT error handlers
         self.log_jwt_event = log_jwt_event

@@ -153,63 +153,53 @@ class DailyEntryRepository(FirestoreRepository):
     
     def get_by_user_and_date(self, user_id: str, entry_date: date) -> Optional[Dict[str, Any]]:
         """Get daily entry by user ID and date"""
-        try:
-            # Convert date to datetime for Firestore compatibility
-            if isinstance(entry_date, date) and not isinstance(entry_date, datetime):
-                entry_datetime = datetime.combine(entry_date, datetime.min.time())
-            else:
-                entry_datetime = entry_date
-            
-            docs = self.db.collection(self.collection_name).where(
-                filter=firestore.FieldFilter('user_id', '==', user_id)
-            ).where(
-                filter=firestore.FieldFilter('date', '==', entry_datetime)
-            ).get()
-            
-            if docs:
-                doc = docs[0]
-                data = doc.to_dict()
-                data['id'] = doc.id
-                return data
-            return None
-        except Exception as e:
-            logger.error(f"Get by user and date operation failed: {e}")
-            raise DatabaseError(f"Failed to retrieve daily entry: {str(e)}")
+        # Convert date to datetime for Firestore compatibility
+        if isinstance(entry_date, date) and not isinstance(entry_date, datetime):
+            entry_datetime = datetime.combine(entry_date, datetime.min.time())
+        else:
+            entry_datetime = entry_date
+        
+        docs = self.db.collection(self.collection_name).where(
+            filter=firestore.FieldFilter('user_id', '==', user_id)
+        ).where(
+            filter=firestore.FieldFilter('date', '==', entry_datetime)
+        ).get()
+        
+        if docs:
+            doc = docs[0]
+            data = doc.to_dict()
+            data['id'] = doc.id
+            return data
+        return None
+
     
     def get_by_user(self, user_id: str, limit: int = 30) -> List[Dict[str, Any]]:
         """Get user's daily entries"""
-        try:
-            docs = self.db.collection(self.collection_name).where(
-                filter=firestore.FieldFilter('user_id', '==', user_id)
-            ).order_by('date', direction=firestore.Query.DESCENDING).limit(limit).get()
-            
-            entries = []
-            for doc in docs:
-                data = doc.to_dict()
-                data['id'] = doc.id
-                entries.append(data)
-            
-            return entries
-        except Exception as e:
-            logger.error(f"Get user entries operation failed: {e}")
-            raise DatabaseError(f"Failed to retrieve user entries: {str(e)}")
-    
+        docs = self.db.collection(self.collection_name).where(
+            filter=firestore.FieldFilter('user_id', '==', user_id)
+        ).order_by('date', direction=firestore.Query.DESCENDING).limit(limit).get()
+        
+        entries = []
+        for doc in docs:
+            data = doc.to_dict()
+            data['id'] = doc.id
+            entries.append(data)
+        
+        return entries
+
     def delete_by_user(self, user_id: str) -> int:
         """Delete all entries for a user"""
-        try:
-            docs = self.db.collection(self.collection_name).where(
-                filter=firestore.FieldFilter('user_id', '==', user_id)
-            ).get()
-            
-            count = 0
-            for doc in docs:
-                doc.reference.delete()
-                count += 1
-            
-            return count
-        except Exception as e:
-            logger.error(f"Delete user entries operation failed: {e}")
-            raise DatabaseError(f"Failed to delete user entries: {str(e)}")
+        docs = self.db.collection(self.collection_name).where(
+            filter=firestore.FieldFilter('user_id', '==', user_id)
+        ).get()
+        
+        count = 0
+        for doc in docs:
+            doc.reference.delete()
+            count += 1
+        
+        return count
+    
 
 class HealthSuggestionRepository(FirestoreRepository):
     """Health suggestion repository"""
@@ -243,20 +233,18 @@ class HealthSuggestionRepository(FirestoreRepository):
     
     def delete_by_user(self, user_id: str) -> int:
         """Delete all suggestions for a user"""
-        try:
-            docs = self.db.collection(self.collection_name).where(
-                filter=firestore.FieldFilter('user_id', '==', user_id)
-            ).get()
-            
-            count = 0
-            for doc in docs:
-                doc.reference.delete()
-                count += 1
-            
-            return count
-        except Exception as e:
-            logger.error(f"Delete user suggestions operation failed: {e}")
-            raise DatabaseError(f"Failed to delete user suggestions: {str(e)}")
+    
+        docs = self.db.collection(self.collection_name).where(
+            filter=firestore.FieldFilter('user_id', '==', user_id)
+        ).get()
+        
+        count = 0
+        for doc in docs:
+            doc.reference.delete()
+            count += 1
+        
+        return count
+  
 
 # Repository instances
 user_repo = UserRepository()

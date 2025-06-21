@@ -109,11 +109,7 @@ def register_error_handlers(app):
     @app.errorhandler(500)
     def handle_internal_error(e):
         return jsonify({'error': 'Internal server error'}), 500
-    
-    @app.errorhandler(Exception)
-    def handle_unexpected_error(e):
-        response, status_code = handle_exception(e)
-        return jsonify(response), status_code
+
 
 # Create app instance
 app = create_app()

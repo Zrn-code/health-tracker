@@ -127,13 +127,6 @@ success_message_model = profile_ns.model('SuccessMessage', {
     'message': fields.String(description='Success message')
 })
 
-class CustomJSONEncoder(json.JSONEncoder):
-    """Custom JSON encoder to handle datetime objects"""
-    def default(self, obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        return super().default(obj)
-
 def serialize_response(data):
     """Serialize response data handling datetime objects"""
     if isinstance(data, dict):
@@ -167,18 +160,6 @@ def get_request_data():
             if data is None:
                 return {}, None
             return data, None
-        
-        # Fallback: check if we have data but wrong content type
-        if hasattr(request, 'data') and request.data:
-            try:
-                import json
-                data = json.loads(request.data.decode('utf-8'))
-                return data, None
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                return None, "Invalid JSON data"
-        
-        # No data at all but correct content type means empty JSON
-        return {}, None
         
     except Exception as e:
         return None, f"Failed to parse JSON: {str(e)}"
@@ -427,8 +408,6 @@ class DailyEntry(Resource):
         try:
             user_id = get_jwt_identity()
             data, error = get_request_data()
-            if error:
-                return {'message': error}, 400
             
             result = health_service.submit_daily_data(user_id, data)
             
@@ -472,19 +451,14 @@ class DailyEntries(Resource):
         
         Use limit parameter to control number of entries returned (max 100).
         """
-        try:
-            user_id = get_jwt_identity()
-            limit = int(request.args.get('limit', 30))
+
+        user_id = get_jwt_identity()
+        limit = int(request.args.get('limit', 30))
+        
+        result = health_service.get_daily_data(user_id, limit)
+        
+        return serialize_response(result)
             
-            result = health_service.get_daily_data(user_id, limit)
-            
-            return serialize_response(result)
-            
-        except HealthTrackerException as e:
-            return {'message': e.message}, e.status_code
-        except Exception as e:
-            logger.error(f"Get daily data error: {e}")
-            return {'message': 'Internal server error'}, 500
 
 @health_ns.route('/suggestion')
 class HealthSuggestion(Resource):
@@ -517,20 +491,12 @@ class HealthSuggestion(Resource):
         
         Requires complete user profile and recent daily entries for best results.
         """
-        try:
-            user_id = get_jwt_identity()
+        user_id = get_jwt_identity()
+        
+        result = health_service.generate_health_suggestion(user_id)
+        
+        log_user_action(user_id, 'HEALTH_SUGGESTION_GENERATED', 'Generated daily health suggestion')
+        
+        return serialize_response(result)
             
-            result = health_service.generate_health_suggestion(user_id)
-            
-            log_user_action(user_id, 'HEALTH_SUGGESTION_GENERATED', 'Generated daily health suggestion')
-            
-            return serialize_response(result)
-            
-        except HealthTrackerException as e:
-            return {'message': e.message}, e.status_code
-        except Exception as e:
-            logger.error(f"Health suggestion error: {e}")
-            return {'message': 'Internal server error'}, 500
-        except Exception as e:
-            logger.error(f"Health suggestion error: {e}")
-            return {'message': 'Internal server error'}, 500
+

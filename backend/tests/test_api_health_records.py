@@ -32,8 +32,7 @@ class TestDailyDataAPI:
         
         if login_response.status_code != 200:
             return None
-        
-        # 返回 token 和用戶數據，以便清理
+          # 返回 token 和用戶數據，以便清理
         return {
             'token': login_response.json()["access_token"],
             'user_data': unique_user_data
@@ -53,6 +52,144 @@ class TestDailyDataAPI:
         
         headers = {"Authorization": f"Bearer {auth_result['token']}"}
         response = api_client.post("/api/health/daily-entry", json_data=invalid_data, headers=headers)
+        
+        assert response.status_code == 400
+        data = response.json()
+        assert "message" in data
+        
+        # Clean up
+        self._cleanup_test_user(api_client, auth_result['token'])
+    
+    def test_submit_daily_data_invalid_weight(self, api_client):
+        """測試提交異常體重數據"""
+        auth_result = self.setup_authenticated_user(api_client)
+        if not auth_result:
+            pytest.skip("無法設置認證用戶")
+        
+        # 測試體重過輕
+        invalid_data_low = {
+            "date": "2024-01-15",
+            "height": 170.5,
+            "weight": 10.0,  # 體重過輕
+            "breakfast": "燕麥粥、牛奶",
+            "lunch": "雞胸肉沙拉",
+            "dinner": "蒸魚、青菜"
+        }
+        
+        headers = {"Authorization": f"Bearer {auth_result['token']}"}
+        response = api_client.post("/api/health/daily-entry", json=invalid_data_low, headers=headers)
+        
+        assert response.status_code == 400
+        data = response.json()
+        assert "message" in data
+        assert "weight" in data["message"].lower()
+        
+        # 測試體重過重
+        invalid_data_high = {
+            "date": "2024-01-16",
+            "height": 170.5,
+            "weight": 600.0,  # 體重過重
+            "breakfast": "燕麥粥、牛奶",
+            "lunch": "雞胸肉沙拉",
+            "dinner": "蒸魚、青菜"
+        }
+        
+        response = api_client.post("/api/health/daily-entry", json=invalid_data_high, headers=headers)
+        
+        assert response.status_code == 400
+        data = response.json()
+        assert "message" in data
+        assert "weight" in data["message"].lower()
+        
+        # Clean up
+        self._cleanup_test_user(api_client, auth_result['token'])
+    
+    def test_submit_daily_data_invalid_height(self, api_client):
+        """測試提交異常身高數據"""
+        auth_result = self.setup_authenticated_user(api_client)
+        if not auth_result:
+            pytest.skip("無法設置認證用戶")
+        
+        # 測試身高過矮
+        invalid_data_low = {
+            "date": "2024-01-15",
+            "height": 30.0,  # 身高過矮
+            "weight": 70.5,
+            "breakfast": "燕麥粥、牛奶",
+            "lunch": "雞胸肉沙拉",
+            "dinner": "蒸魚、青菜"
+        }
+        
+        headers = {"Authorization": f"Bearer {auth_result['token']}"}
+        response = api_client.post("/api/health/daily-entry", json=invalid_data_low, headers=headers)
+        
+        assert response.status_code == 400
+        data = response.json()
+        assert "message" in data
+        assert "height" in data["message"].lower()
+        
+        # 測試身高過高
+        invalid_data_high = {
+            "date": "2024-01-16",
+            "height": 350.0,  # 身高過高
+            "weight": 70.5,
+            "breakfast": "燕麥粥、牛奶",
+            "lunch": "雞胸肉沙拉",
+            "dinner": "蒸魚、青菜"
+        }
+        
+        response = api_client.post("/api/health/daily-entry", json=invalid_data_high, headers=headers)
+        
+        assert response.status_code == 400
+        data = response.json()
+        assert "message" in data
+        assert "height" in data["message"].lower()
+        
+        # Clean up
+        self._cleanup_test_user(api_client, auth_result['token'])
+    
+    def test_submit_daily_data_invalid_weight_type(self, api_client):
+        """測試提交非數字體重數據"""
+        auth_result = self.setup_authenticated_user(api_client)
+        if not auth_result:
+            pytest.skip("無法設置認證用戶")
+        
+        invalid_data = {
+            "date": "2024-01-15",
+            "height": 170.5,
+            "weight": "invalid_weight",  # 非數字體重
+            "breakfast": "燕麥粥、牛奶",
+            "lunch": "雞胸肉沙拉",
+            "dinner": "蒸魚、青菜"
+        }
+        
+        headers = {"Authorization": f"Bearer {auth_result['token']}"}
+        response = api_client.post("/api/health/daily-entry", json=invalid_data, headers=headers)
+        
+        assert response.status_code == 400
+        data = response.json()
+        assert "message" in data
+        
+        # Clean up
+        self._cleanup_test_user(api_client, auth_result['token'])
+    
+    def test_submit_daily_data_invalid_height_type(self, api_client):
+        """測試提交非數字身高數據"""
+        auth_result = self.setup_authenticated_user(api_client)
+        if not auth_result:
+            pytest.skip("無法設置認證用戶")
+        
+        invalid_data = {
+            "date": "2024-01-15",
+            "height": "invalid_height",  # 非數字身高
+            "weight": 70.5,
+            "breakfast": "燕麥粥、牛奶",
+            "lunch": "雞胸肉沙拉",
+            "dinner": "蒸魚、青菜"
+        }
+        
+        headers = {"Authorization": f"Bearer {auth_result['token']}"}
+        response = api_client.post("/api/health/daily-entry", json=invalid_data, headers=headers)
         
         assert response.status_code == 400
         data = response.json()
