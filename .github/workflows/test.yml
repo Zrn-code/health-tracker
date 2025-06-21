@@ -31,7 +31,7 @@ jobs:
       - name: Write Firebase secret to file
         run: |
           mkdir -p backend/secret
-          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > backend/secret/firebase
+          printf "%s" "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > backend/secret/firebase
 
       - name: Run tests with coverage
         working-directory: ./backend
